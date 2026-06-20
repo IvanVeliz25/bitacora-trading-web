@@ -24,9 +24,9 @@
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         
-        <div class="glass-card p-4 md:col-span-1 bg-slate-800/50">
-            <label class="text-blue-400 mb-1 flex justify-between">Capital Base <span>(En BD)</span></label>
-            <div id="stat-capital-base" class="text-2xl font-bold text-white mb-3">$0.00</div>
+        <div class="glass-card p-4 md:col-span-1 bg-slate-800/50 border-blue-500/30">
+            <label class="text-blue-400 mb-1 flex justify-between">Capital Disponible</label>
+            <div id="stat-capital-disp" class="text-3xl font-bold text-white mb-3">$0.00</div>
             
             <div class="flex gap-2 mb-3">
                 <button onclick="abrirModalCapital('DEPOSITO')" class="flex-1 bg-emerald-600/20 text-emerald-400 border border-emerald-600/50 hover:bg-emerald-600/40 py-1 rounded text-xs font-bold transition">+ Inyectar</button>
@@ -34,8 +34,8 @@
             </div>
             
             <div class="flex justify-between items-center border-t border-slate-700 pt-2">
-                <span class="text-xs text-slate-400 uppercase font-bold">Disponible:</span>
-                <span id="stat-capital-disp" class="text-lg text-white font-bold">$0.00</span>
+                <span class="text-xs text-slate-400 uppercase font-bold">Base Inicial:</span>
+                <span id="stat-capital-base" class="text-sm text-slate-300 font-bold">$0.00</span>
             </div>
         </div>
 
@@ -64,11 +64,13 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <div class="glass-card p-5 h-fit lg:col-span-1">
+        <div class="glass-card p-5 h-fit lg:col-span-1 border-slate-700">
             <h2 class="text-lg font-bold mb-4">Nueva Posición</h2>
             
             <div class="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 text-center">
-                <div id="display-riesgo" class="text-sm text-slate-300">Riesgo: <b>$0.00</b> | Lotaje: <b>0.0000</b></div>
+                <div id="display-riesgo" class="text-[13px] text-slate-300">
+                    Riesgo: <b>$0.00</b> | Lot: <b>0.0000</b> | Vol: <b>$0.00</b>
+                </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3 mb-3">
@@ -93,11 +95,24 @@
             </div>
             
             <div id="div-otro" class="mb-3 hidden"><label>Nombre del Activo</label><input type="text" id="activoOtro" placeholder="Ej: RNDR"></div>
-            <div class="mb-3"><label>Dirección</label><select id="direccion" class="font-bold" onchange="calcularRiesgo()"><option value="LONG">LONG (Compra)</option><option value="SHORT">SHORT (Venta)</option></select></div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label>Dirección</label>
+                    <select id="direccion" class="font-bold" onchange="calcularSlPorDistancia()">
+                        <option value="LONG">LONG</option>
+                        <option value="SHORT">SHORT</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Distancia SL (%)</label>
+                    <input type="number" id="sl-distancia" step="any" placeholder="Ej: 1.5" oninput="calcularSlPorDistancia()">
+                </div>
+            </div>
 
             <div class="grid grid-cols-2 gap-3 mb-5">
-                <div><label>Precio Entrada</label><input type="number" id="entrada" step="any" placeholder="0.00" oninput="calcularRiesgo()"></div>
-                <div><label>Stop Loss (SL)</label><input type="number" id="sl" step="any" placeholder="0.00" oninput="calcularRiesgo()"></div>
+                <div><label>Precio Entrada</label><input type="number" id="entrada" step="any" placeholder="0.00" oninput="calcularSlPorDistancia()"></div>
+                <div><label>Stop Loss (SL)</label><input type="number" id="sl" step="any" placeholder="0.00" oninput="limpiarDistancia()"></div>
             </div>
 
             <button onclick="guardarOperacion()" id="btnGuardar" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition shadow-lg">Abrir Posición</button>
@@ -109,7 +124,7 @@
                 <div id="lista-abiertas" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
             <div>
-                <h2 class="text-lg font-bold mb-3 text-slate-200 flex justify-between">Historial<button onclick="cargarDatos()" class="text-xs bg-slate-800 px-3 py-1 rounded">🔄 Actualizar</button></h2>
+                <h2 class="text-lg font-bold mb-3 text-slate-200 flex justify-between">Historial<button onclick="cargarDatos()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded transition">🔄 Actualizar</button></h2>
                 <div id="lista-cerradas" class="space-y-3"></div>
             </div>
         </div>
@@ -119,14 +134,8 @@
         <div class="glass-card p-6 w-full max-w-sm">
             <h3 id="modal-cap-titulo" class="text-lg font-bold mb-4 text-white">Registrar Capital</h3>
             <input type="hidden" id="modal-cap-tipo">
-            <div class="mb-5">
-                <label>Monto ($)</label>
-                <input type="number" id="modal-cap-monto" step="any" placeholder="Ej: 500" class="text-xl font-bold text-center">
-            </div>
-            <div class="flex gap-3">
-                <button onclick="cerrarModal('modalCapital')" class="w-1/2 bg-slate-700 py-2.5 rounded font-bold">Cancelar</button>
-                <button onclick="ejecutarTransaccionCapital()" class="w-1/2 bg-blue-600 py-2.5 rounded font-bold">Confirmar</button>
-            </div>
+            <div class="mb-5"><label>Monto ($)</label><input type="number" id="modal-cap-monto" step="any" class="text-xl font-bold text-center"></div>
+            <div class="flex gap-3"><button onclick="cerrarModal('modalCapital')" class="w-1/2 bg-slate-700 py-2.5 rounded font-bold">Cancelar</button><button onclick="ejecutarTransaccionCapital()" class="w-1/2 bg-blue-600 py-2.5 rounded font-bold">Confirmar</button></div>
         </div>
     </div>
 
@@ -134,32 +143,11 @@
         <div class="glass-card p-6 w-full max-w-sm">
             <h3 class="text-lg font-bold mb-2 text-blue-400">Cerrar Posición</h3>
             <div id="modal-cierre-info" class="text-xs text-slate-400 mb-4 bg-slate-900 p-2 rounded">Lotaje Abierto: <b>0</b></div>
-            
-            <input type="hidden" id="modal-cierre-id">
-            <input type="hidden" id="modal-cierre-max-lot">
-            
-            <div class="mb-3">
-                <label>Tipo de Cierre</label>
-                <select id="modal-cierre-tipo" onchange="toggleInputsCierre()">
-                    <option value="TOTAL">Total (Cierra 100%)</option>
-                    <option value="PARCIAL">Parcial (Elegir lotaje)</option>
-                </select>
-            </div>
-
-            <div id="div-lote-parcial" class="mb-3 hidden">
-                <label>Lotaje a Cerrar</label>
-                <input type="number" id="modal-cierre-lotaje" step="any" placeholder="Ej: 0.05">
-            </div>
-            
-            <div class="mb-5">
-                <label>PnL Realizado en este cierre ($ USDT)</label>
-                <input type="number" id="modal-cierre-pnl" step="any" placeholder="Ej: 15.50 o -5.20" class="text-lg font-bold text-center">
-            </div>
-
-            <div class="flex gap-3">
-                <button onclick="cerrarModal('modalCierre')" class="w-1/2 bg-slate-700 py-2.5 rounded font-bold">Cancelar</button>
-                <button onclick="ejecutarCierre()" class="w-1/2 bg-blue-600 py-2.5 rounded font-bold">Confirmar</button>
-            </div>
+            <input type="hidden" id="modal-cierre-id"><input type="hidden" id="modal-cierre-max-lot">
+            <div class="mb-3"><label>Tipo de Cierre</label><select id="modal-cierre-tipo" onchange="toggleInputsCierre()"><option value="TOTAL">Total (Cierra 100%)</option><option value="PARCIAL">Parcial (Elegir lotaje)</option></select></div>
+            <div id="div-lote-parcial" class="mb-3 hidden"><label>Lotaje a Cerrar</label><input type="number" id="modal-cierre-lotaje" step="any"></div>
+            <div class="mb-5"><label>PnL Realizado ($ USDT)</label><input type="number" id="modal-cierre-pnl" step="any" class="text-lg font-bold text-center"></div>
+            <div class="flex gap-3"><button onclick="cerrarModal('modalCierre')" class="w-1/2 bg-slate-700 py-2.5 rounded font-bold">Cancelar</button><button onclick="ejecutarCierre()" class="w-1/2 bg-blue-600 py-2.5 rounded font-bold">Confirmar</button></div>
         </div>
     </div>
 
@@ -167,23 +155,10 @@
         <div class="glass-card p-6 w-full max-w-sm">
             <h3 class="text-lg font-bold mb-4 text-emerald-400">Editar Operación</h3>
             <input type="hidden" id="modal-edit-id">
-            
             <div class="mb-3"><label>Activo</label><input type="text" id="modal-edit-activo"></div>
-            
-            <div class="grid grid-cols-2 gap-3 mb-3">
-                <div><label>Estado</label><select id="modal-edit-estado"><option value="ABIERTA">Abierta</option><option value="BREAKEVEN">BreakEven</option><option value="CERRADA">Cerrada</option></select></div>
-                <div><label>Lotaje Actual</label><input type="number" id="modal-edit-lotaje" step="any"></div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div><label>Precio Entrada</label><input type="number" id="modal-edit-entrada" step="any"></div>
-                <div><label>PnL Total</label><input type="number" id="modal-edit-pnl" step="any"></div>
-            </div>
-
-            <div class="flex gap-3">
-                <button onclick="cerrarModal('modalEditar')" class="w-1/2 bg-slate-700 py-2 rounded font-bold">Cancelar</button>
-                <button onclick="guardarEdicion()" class="w-1/2 bg-emerald-600 py-2 rounded font-bold">Guardar</button>
-            </div>
+            <div class="grid grid-cols-2 gap-3 mb-3"><div><label>Estado</label><select id="modal-edit-estado"><option value="ABIERTA">Abierta</option><option value="BREAKEVEN">BreakEven</option><option value="CERRADA">Cerrada</option></select></div><div><label>Lotaje Actual</label><input type="number" id="modal-edit-lotaje" step="any"></div></div>
+            <div class="grid grid-cols-2 gap-3 mb-4"><div><label>Precio Entrada</label><input type="number" id="modal-edit-entrada" step="any"></div><div><label>PnL Total</label><input type="number" id="modal-edit-pnl" step="any"></div></div>
+            <div class="flex gap-3"><button onclick="cerrarModal('modalEditar')" class="w-1/2 bg-slate-700 py-2 rounded font-bold">Cancelar</button><button onclick="guardarEdicion()" class="w-1/2 bg-emerald-600 py-2 rounded font-bold">Guardar</button></div>
         </div>
     </div>
 
@@ -195,56 +170,74 @@
 
         let chartInstance = null;
         let capitalBaseGlobal = 0;
+        let capitalDisponibleGlobal = 0; // NUEVA VARIABLE DINÁMICA
         let operacionActualCalculada = { tamano: 0, riesgoUsdt: 0 };
         let operacionesCargadas = [];
 
         window.addEventListener('DOMContentLoaded', cargarDatos);
 
-        function cerrarModal(id) {
-            document.getElementById(id).classList.add('hidden');
-            document.getElementById(id).classList.remove('flex');
-        }
+        function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 
-        // --- GESTIÓN DE CAPITAL (BASE DE DATOS) ---
+        // --- GESTIÓN DE CAPITAL ---
         function abrirModalCapital(tipo) {
             document.getElementById('modal-cap-tipo').value = tipo;
             document.getElementById('modal-cap-titulo').innerText = tipo === 'DEPOSITO' ? 'Inyectar Capital' : 'Retirar Capital';
             document.getElementById('modal-cap-monto').value = '';
-            document.getElementById('modalCapital').classList.remove('hidden');
-            document.getElementById('modalCapital').classList.add('flex');
+            document.getElementById('modalCapital').classList.remove('hidden'); document.getElementById('modalCapital').classList.add('flex');
         }
 
         async function ejecutarTransaccionCapital() {
             const monto = parseFloat(document.getElementById('modal-cap-monto').value);
             const tipo = document.getElementById('modal-cap-tipo').value;
             if(!monto || isNaN(monto)) return alert("Ingresa un monto válido");
-
             await db.from('historial_capital').insert([{ tipo: tipo, monto: monto }]);
-            cerrarModal('modalCapital');
-            cargarDatos();
+            cerrarModal('modalCapital'); cargarDatos();
         }
 
-        // --- CÁLCULO Y FORMULARIO NUEVA OP ---
-        function toggleOtro() {
-            document.getElementById('div-otro').style.display = document.getElementById('activo').value === 'OTRO' ? 'block' : 'none';
+        function toggleOtro() { document.getElementById('div-otro').style.display = document.getElementById('activo').value === 'OTRO' ? 'block' : 'none'; }
+
+        // --- NUEVA LÓGICA DE CÁLCULO DE SL ---
+        function calcularSlPorDistancia() {
+            const ent = parseFloat(document.getElementById('entrada').value) || 0;
+            const dist = parseFloat(document.getElementById('sl-distancia').value) || 0;
+            const dir = document.getElementById('direccion').value;
+
+            if (ent > 0 && dist > 0) {
+                let slCalc = dir === 'LONG' ? ent * (1 - (dist/100)) : ent * (1 + (dist/100));
+                document.getElementById('sl').value = slCalc.toFixed(5);
+            }
+            calcularRiesgo();
         }
 
+        function limpiarDistancia() {
+            document.getElementById('sl-distancia').value = '';
+            calcularRiesgo();
+        }
+
+        // --- RIESGO BASADO EN CAPITAL DISPONIBLE Y VOLUMEN ---
         function calcularRiesgo() {
+            // AHORA USA EL CAPITAL DISPONIBLE
             const rP = parseFloat(document.getElementById('riesgoP').value) || 0;
             const comisionP = parseFloat(document.getElementById('comision').value) || 0;
             const ent = parseFloat(document.getElementById('entrada').value) || 0;
             const sl = parseFloat(document.getElementById('sl').value) || 0;
 
-            const riesgoUsdt = capitalBaseGlobal * (rP / 100);
+            const riesgoUsdt = capitalDisponibleGlobal * (rP / 100);
             let tamano = 0;
+            let volumen = 0;
 
             if (ent > 0 && sl > 0 && ent !== sl) {
                 const divisor = Math.abs(ent - sl) + (ent + sl) * (comisionP / 100);
                 tamano = riesgoUsdt / divisor;
+                volumen = tamano * ent;
             }
 
             operacionActualCalculada = { tamano, riesgoUsdt };
-            document.getElementById('display-riesgo').innerHTML = `Riesgo: <b class="text-white">$${riesgoUsdt.toFixed(2)}</b> | Lot: <b class="text-white">${tamano.toFixed(5)}</b>`;
+            document.getElementById('display-riesgo').innerHTML = `
+                Riesgo: <b class="text-white">$${riesgoUsdt.toFixed(2)}</b> | 
+                Lot: <b class="text-white">${tamano.toFixed(5)}</b> | 
+                Vol: <b class="text-white">$${volumen.toFixed(2)}</b>
+            `;
         }
 
         async function guardarOperacion() {
@@ -267,14 +260,12 @@
 
             await db.from('bitacora_trading').insert([op]);
             
-            document.getElementById('entrada').value = ""; document.getElementById('sl').value = "";
+            document.getElementById('entrada').value = ""; document.getElementById('sl').value = ""; document.getElementById('sl-distancia').value = "";
             await cargarDatos();
             btn.innerText = "Abrir Posición"; btn.disabled = false;
         }
 
-        // --- DESCARGAR Y RENDERIZAR TODO ---
         async function cargarDatos() {
-            // Bajamos las dos tablas en paralelo
             const [resOps, resCap] = await Promise.all([
                 db.from('bitacora_trading').select('*').order('fecha_operacion', { ascending: false }),
                 db.from('historial_capital').select('*')
@@ -283,7 +274,6 @@
             operacionesCargadas = resOps.data || [];
             const transaccionesCapital = resCap.data || [];
 
-            // Calcular Capital Base Real
             capitalBaseGlobal = 0;
             transaccionesCapital.forEach(t => {
                 if(t.tipo === 'DEPOSITO') capitalBaseGlobal += parseFloat(t.monto);
@@ -292,7 +282,6 @@
             document.getElementById('stat-capital-base').innerText = `$${capitalBaseGlobal.toFixed(2)}`;
 
             renderizarEstadisticas();
-            calcularRiesgo(); // Recalcula el input de lotaje basándose en el nuevo capital
         }
 
         function renderizarEstadisticas() {
@@ -312,7 +301,6 @@
                 const hora = new Date(op.fecha_operacion).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
                 const badgeCls = op.direccion === 'LONG' ? 'bg-long' : 'bg-short';
                 
-                // Generar HTML de Parciales si existen
                 let htmlParciales = '';
                 if(op.historial_parciales && op.historial_parciales.length > 0) {
                     htmlParciales = `<div class="mt-3 pt-2 border-t border-slate-700/50 text-xs">`;
@@ -320,45 +308,34 @@
                         const dateP = new Date(p.fecha).toLocaleString('es-ES', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
                         const pSign = p.pnl >= 0 ? '+' : '';
                         const pCol = p.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400';
-                        htmlParciales += `<div class="flex justify-between text-slate-400 mb-1">
-                            <span>↳ Parcial (${p.lotaje} lot)</span>
-                            <span>${dateP} <b class="${pCol} ml-2">${pSign}$${p.pnl}</b></span>
-                        </div>`;
+                        htmlParciales += `<div class="flex justify-between text-slate-400 mb-1"><span>↳ Parcial (${p.lotaje} lot)</span><span>${dateP} <b class="${pCol} ml-2">${pSign}$${p.pnl}</b></span></div>`;
                     });
                     htmlParciales += `</div>`;
                 }
 
                 const cardButtons = op.estado === 'ABIERTA' || op.estado === 'BREAKEVEN' ? `
                     <div class="flex gap-2 pl-2 mt-3">
-                        <button onclick="abrirModalCierre('${op.id}')" class="flex-1 bg-blue-600/20 text-blue-400 border border-blue-600/50 py-1.5 rounded text-xs font-bold transition">Cerrar</button>
+                        <button onclick="abrirModalCierre('${op.id}')" class="flex-1 bg-blue-600/20 text-blue-400 border border-blue-600/50 hover:bg-blue-600/40 py-1.5 rounded text-xs font-bold transition">Cerrar</button>
                         <button onclick="abrirModalEditar('${op.id}')" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-1.5 rounded text-xs transition">✏️ Editar</button>
-                        <button onclick="eliminar('${op.id}')" class="px-3 bg-rose-900/30 text-rose-400 border border-rose-900 rounded transition">🗑</button>
+                        <button onclick="eliminar('${op.id}')" class="px-3 bg-rose-900/30 hover:bg-rose-900 text-rose-400 border border-rose-900 rounded transition">🗑</button>
                     </div>` : `
                     <div class="flex gap-2 pl-2 mt-3">
-                        <button onclick="abrirModalEditar('${op.id}')" class="text-xs text-slate-500 hover:text-white px-2 py-1 bg-slate-800 rounded">✏️ Editar</button>
-                        <button onclick="eliminar('${op.id}')" class="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 bg-slate-800 rounded">🗑 Eliminar</button>
+                        <button onclick="abrirModalEditar('${op.id}')" class="text-xs text-slate-500 hover:text-white px-2 py-1 bg-slate-800 rounded transition">✏️ Editar</button>
+                        <button onclick="eliminar('${op.id}')" class="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 bg-slate-800 rounded transition">🗑 Eliminar</button>
                     </div>`;
 
                 const cardHTML = `
                     <div class="glass-card p-4 relative overflow-hidden border-slate-700 mb-3 shadow-md">
                         <div class="absolute left-0 top-0 bottom-0 w-1 ${op.estado === 'CERRADA' ? (pnlOp >= 0 ? 'bg-emerald-500' : 'bg-rose-500') : (op.estado === 'BREAKEVEN' ? 'bg-yellow-500' : 'bg-blue-500')}"></div>
                         <div class="flex justify-between items-start mb-2 pl-2">
-                            <div>
-                                <h3 class="font-bold text-lg">${op.activo} <span class="text-[10px] px-1.5 py-0.5 rounded ${badgeCls} ml-1">${op.direccion}</span></h3>
-                                <span class="text-xs text-slate-400 border border-slate-600 bg-slate-800 rounded px-1">${op.temporalidad}</span>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-xs text-slate-400">${fecha} ${hora}</div>
-                                ${op.estado === 'CERRADA' ? `<div class="font-bold text-lg mt-1 ${pnlOp >= 0 ? 'text-neon-green' : 'text-neon-red'}">${pnlOp >= 0 ? '+' : ''}$${pnlOp.toFixed(2)}</div>` : ''}
-                            </div>
+                            <div><h3 class="font-bold text-lg">${op.activo} <span class="text-[10px] px-1.5 py-0.5 rounded ${badgeCls} ml-1">${op.direccion}</span></h3><span class="text-xs text-slate-400 border border-slate-600 bg-slate-800 rounded px-1">${op.temporalidad}</span></div>
+                            <div class="text-right"><div class="text-xs text-slate-400">${fecha} ${hora}</div>${op.estado === 'CERRADA' ? `<div class="font-bold text-lg mt-1 ${pnlOp >= 0 ? 'text-neon-green' : 'text-neon-red'}">${pnlOp >= 0 ? '+' : ''}$${pnlOp.toFixed(2)}</div>` : ''}</div>
                         </div>
-                        
                         <div class="flex justify-between text-sm pl-2">
                             <div><span class="text-slate-400 text-[10px] uppercase block">Entrada</span><span class="font-bold">${op.precio_entrada}</span></div>
                             <div><span class="text-slate-400 text-[10px] uppercase block">Riesgo</span><span class="${op.estado === 'ABIERTA' ? 'text-neon-red font-bold' : 'text-slate-500 line-through'}">-$${parseFloat(op.riesgo_usdt).toFixed(2)}</span></div>
                             <div><span class="text-slate-400 text-[10px] uppercase block">Lotaje Act.</span><span class="font-bold">${parseFloat(op.lotaje).toFixed(5)}</span></div>
                         </div>
-                        
                         ${htmlParciales}
                         ${cardButtons}
                     </div>
@@ -368,12 +345,13 @@
                 else { historialPnl.unshift(pnlTotal); cerradasHTML.push(cardHTML); }
             });
 
+            // ACTUALIZACIÓN DE GLOBALES DINÁMICAS
             const capitalActual = capitalBaseGlobal + pnlTotal;
-            const capitalDisponible = capitalActual - riesgoFlotante;
+            capitalDisponibleGlobal = capitalActual - riesgoFlotante;
             const totalCerradas = wins + losses + bes;
 
-            document.getElementById('stat-capital-disp').innerText = `$${capitalDisponible.toFixed(2)}`;
-            document.getElementById('stat-capital-disp').className = `text-lg font-bold ${capitalDisponible > capitalBaseGlobal ? 'text-neon-green' : 'text-white'}`;
+            document.getElementById('stat-capital-disp').innerText = `$${capitalDisponibleGlobal.toFixed(2)}`;
+            document.getElementById('stat-capital-disp').className = `text-3xl font-bold ${capitalDisponibleGlobal > capitalBaseGlobal ? 'text-neon-green' : 'text-white'} mb-3`;
             document.getElementById('stat-ops').innerText = operacionesCargadas.length;
             document.getElementById('stat-ops-detail').innerText = `${wins}W - ${losses}L - ${bes}BE`;
             document.getElementById('stat-winrate').innerText = totalCerradas > 0 ? `${Math.round((wins / totalCerradas) * 100)}%` : '0%';
@@ -386,34 +364,25 @@
             document.getElementById('lista-cerradas').innerHTML = cerradasHTML.length ? cerradasHTML.join('') : '<p class="text-slate-500 text-sm italic">El historial está vacío.</p>';
 
             actualizarGrafica(historialPnl, capitalBaseGlobal);
+            calcularRiesgo(); // Recalcula el form inmediatamente tras pintar el nuevo disponible
         }
 
-        // --- LÓGICA DE CIERRE (PARCIALES Y TOTALES) ---
+        // --- CÓDIGO DE MODALES CIERRE Y EDICIÓN (MANTENIDOS) ---
         function abrirModalCierre(id) {
             const op = operacionesCargadas.find(o => o.id === id);
-            document.getElementById('modal-cierre-id').value = id;
-            document.getElementById('modal-cierre-max-lot').value = op.lotaje;
+            document.getElementById('modal-cierre-id').value = id; document.getElementById('modal-cierre-max-lot').value = op.lotaje;
             document.getElementById('modal-cierre-info').innerHTML = `Lotaje Abierto Disponible: <b class="text-white">${op.lotaje}</b>`;
-            document.getElementById('modal-cierre-lotaje').value = op.lotaje;
-            document.getElementById('modal-cierre-pnl').value = '';
-            document.getElementById('modal-cierre-tipo').value = 'TOTAL';
-            toggleInputsCierre();
-            
-            document.getElementById('modalCierre').classList.remove('hidden');
-            document.getElementById('modalCierre').classList.add('flex');
+            document.getElementById('modal-cierre-lotaje').value = op.lotaje; document.getElementById('modal-cierre-pnl').value = '';
+            document.getElementById('modal-cierre-tipo').value = 'TOTAL'; toggleInputsCierre();
+            document.getElementById('modalCierre').classList.remove('hidden'); document.getElementById('modalCierre').classList.add('flex');
         }
 
         function toggleInputsCierre() {
             const tipo = document.getElementById('modal-cierre-tipo').value;
             const max = document.getElementById('modal-cierre-max-lot').value;
             const inputLot = document.getElementById('div-lote-parcial');
-            if(tipo === 'PARCIAL') {
-                inputLot.classList.remove('hidden');
-                document.getElementById('modal-cierre-lotaje').value = '';
-            } else {
-                inputLot.classList.add('hidden');
-                document.getElementById('modal-cierre-lotaje').value = max;
-            }
+            if(tipo === 'PARCIAL') { inputLot.classList.remove('hidden'); document.getElementById('modal-cierre-lotaje').value = ''; } 
+            else { inputLot.classList.add('hidden'); document.getElementById('modal-cierre-lotaje').value = max; }
         }
 
         async function ejecutarCierre() {
@@ -425,76 +394,45 @@
             if(isNaN(pnlNuevo) || isNaN(lotajeCerrar) || lotajeCerrar <= 0) return alert("Llena los campos correctamente.");
             if(lotajeCerrar > op.lotaje) return alert("No puedes cerrar un lotaje mayor al que tienes abierto.");
 
-            // Crear el objeto del parcial
             const parcial = { fecha: new Date().toISOString(), lotaje: lotajeCerrar, pnl: pnlNuevo };
-            const arrayParciales = op.historial_parciales || [];
-            arrayParciales.push(parcial);
+            const arrayParciales = op.historial_parciales || []; arrayParciales.push(parcial);
 
             const pnlAcumulado = (parseFloat(op.resultado_pnl) || 0) + pnlNuevo;
             const lotajeRestante = op.lotaje - lotajeCerrar;
-            
-            // Lógica de estado
             let nuevoEstado = op.estado;
-            if(lotajeRestante <= 0.000001) nuevoEstado = 'CERRADA';
-            else nuevoEstado = 'BREAKEVEN'; // Si queda parcial abierto, el riesgo pasa a cero automáticamente
+            if(lotajeRestante <= 0.000001) nuevoEstado = 'CERRADA'; else nuevoEstado = 'BREAKEVEN';
 
-            await db.from('bitacora_trading').update({ 
-                estado: nuevoEstado, 
-                resultado_pnl: pnlAcumulado, 
-                lotaje: Math.max(0, lotajeRestante),
-                historial_parciales: arrayParciales
-            }).eq('id', id);
-
-            cerrarModal('modalCierre');
-            cargarDatos();
+            await db.from('bitacora_trading').update({ estado: nuevoEstado, resultado_pnl: pnlAcumulado, lotaje: Math.max(0, lotajeRestante), historial_parciales: arrayParciales }).eq('id', id);
+            cerrarModal('modalCierre'); cargarDatos();
         }
 
-        // --- MODAL DE EDICIÓN (ERRORES) ---
         function abrirModalEditar(id) {
             const op = operacionesCargadas.find(o => o.id === id);
-            document.getElementById('modal-edit-id').value = id;
-            document.getElementById('modal-edit-activo').value = op.activo;
-            document.getElementById('modal-edit-estado').value = op.estado;
-            document.getElementById('modal-edit-lotaje').value = op.lotaje;
-            document.getElementById('modal-edit-entrada').value = op.precio_entrada;
-            document.getElementById('modal-edit-pnl').value = op.resultado_pnl;
-            
-            document.getElementById('modalEditar').classList.remove('hidden');
-            document.getElementById('modalEditar').classList.add('flex');
+            document.getElementById('modal-edit-id').value = id; document.getElementById('modal-edit-activo').value = op.activo;
+            document.getElementById('modal-edit-estado').value = op.estado; document.getElementById('modal-edit-lotaje').value = op.lotaje;
+            document.getElementById('modal-edit-entrada').value = op.precio_entrada; document.getElementById('modal-edit-pnl').value = op.resultado_pnl;
+            document.getElementById('modalEditar').classList.remove('hidden'); document.getElementById('modalEditar').classList.add('flex');
         }
 
         async function guardarEdicion() {
             const id = document.getElementById('modal-edit-id').value;
-            const up = {
-                activo: document.getElementById('modal-edit-activo').value.toUpperCase(),
-                estado: document.getElementById('modal-edit-estado').value,
-                lotaje: parseFloat(document.getElementById('modal-edit-lotaje').value),
-                precio_entrada: parseFloat(document.getElementById('modal-edit-entrada').value),
-                resultado_pnl: parseFloat(document.getElementById('modal-edit-pnl').value)
-            };
+            const up = { activo: document.getElementById('modal-edit-activo').value.toUpperCase(), estado: document.getElementById('modal-edit-estado').value, lotaje: parseFloat(document.getElementById('modal-edit-lotaje').value), precio_entrada: parseFloat(document.getElementById('modal-edit-entrada').value), resultado_pnl: parseFloat(document.getElementById('modal-edit-pnl').value) };
             await db.from('bitacora_trading').update(up).eq('id', id);
-            cerrarModal('modalEditar');
-            cargarDatos();
+            cerrarModal('modalEditar'); cargarDatos();
         }
 
         async function eliminar(id) {
             if(confirm("¿Seguro que deseas eliminar este registro para siempre? El saldo volverá a tu cuenta.")) {
-                await db.from('bitacora_trading').delete().eq('id', id);
-                cargarDatos();
+                await db.from('bitacora_trading').delete().eq('id', id); cargarDatos();
             }
         }
 
-        // --- GRÁFICA ---
         function actualizarGrafica(datosPnl, base) {
             let arrayCurva = [base]; let acumulador = base;
             datosPnl.forEach(pnl => { if(pnl !== 0) { acumulador += pnl; arrayCurva.push(acumulador); }});
             const ctx = document.getElementById('chartCapital').getContext('2d');
             if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: { labels: arrayCurva.map((_, i) => `Op ${i}`), datasets: [{ label: 'Capital', data: arrayCurva, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0f172a', fill: true, tension: 0.3 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } }
-            });
+            chartInstance = new Chart(ctx, { type: 'line', data: { labels: arrayCurva.map((_, i) => `Op ${i}`), datasets: [{ label: 'Capital', data: arrayCurva, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0f172a', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } });
         }
     </script>
 </body>
