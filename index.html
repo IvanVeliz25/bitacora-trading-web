@@ -3,57 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitácora de Trading</title>
-    <!-- Tailwind CSS para un diseño elegante y responsivo sin escribir CSS extra -->
+    <title>Dashboard & Bitácora de Trading</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Librería de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen p-4 md:p-8">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
 
-    <div class="max-w-4xl mx-auto">
-        <header class="mb-8 border-b border-gray-700 pb-4">
-            <h1 class="text-3xl font-bold text-blue-400">Mi Bitácora de Trading</h1>
-            <p class="text-gray-400 text-sm mt-1">Registro y análisis de operaciones</p>
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
+        <header class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-800 pb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-emerald-400">Trading Journal</h1>
+                <p class="text-slate-400 text-sm mt-1">Panel de control estadístico y registro analítico</p>
+            </div>
+            <div>
+                <button id="btn-vista-simple" class="bg-slate-800 hover:bg-slate-700 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-700 transition-all">
+                    Alternar Vista Simple
+                </button>
+            </div>
         </header>
 
-        <!-- Panel de Estado -->
-        <div class="bg-gray-800 rounded-lg p-6 mb-8 shadow-lg">
-            <h2 class="text-xl font-semibold mb-4 text-gray-200">Estado de Conexión</h2>
-            <button id="btn-probar" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition-colors">
-                Verificar Supabase
-            </button>
-            <p id="mensaje-estado" class="mt-3 text-sm text-gray-400"></p>
+        <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Beneficio Total</span>
+                <div id="stat-pnl" class="text-2xl font-bold mt-1 text-slate-300">$0.00</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Operaciones Totales</span>
+                <div id="stat-totales" class="text-2xl font-bold mt-1 text-slate-300">0</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm">
+                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Win Rate (Efectividad)</span>
+                <div id="stat-winrate" class="text-2xl font-bold mt-1 text-slate-300">0%</div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <section class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-xl p-6 h-fit shadow-md">
+                <h2 class="text-lg font-bold text-slate-200 mb-4 pb-2 border-b border-slate-800">Nueva Operación</h2>
+                <form id="form-trading" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Activo / Par</label>
+                        <input type="text" id="activo" placeholder="Ej: BTCUSD o EURUSD" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Dirección</label>
+                        <select id="direccion" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="COMPRA">COMPRA (Long)</option>
+                            <option value="VENTA">VENTA (Short)</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Precio Entrada</label>
+                            <input type="number" step="any" id="precio_entrada" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Precio Salida</label>
+                            <input type="number" step="any" id="precio_salida" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Lote / Contratos</label>
+                            <input type="number" step="any" id="lote" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Resultado (PnL)</label>
+                            <input type="number" step="any" id="pnl" placeholder="Ej: 50 o -25" required class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Nivel RSI (Opcional)</label>
+                        <input type="number" id="rsi" placeholder="Ej: 30 o 70" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Notas / Confluencias</label>
+                        <textarea id="notas" rows="2" placeholder="Detalles de la estrategia..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg text-sm transition-colors shadow-md">
+                        Guardar Operación
+                    </button>
+                </form>
+            </section>
+
+            <section class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-md overflow-hidden">
+                <h2 class="text-lg font-bold text-slate-200 mb-4 pb-2 border-b border-slate-800">Historial de Trade</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+                                <th class="py-3 px-2">Activo</th>
+                                <th class="py-3 px-2">Tipo</th>
+                                <th class="py-3 px-2">Entrada</th>
+                                <th class="py-3 px-2">Salida</th>
+                                <th class="py-3 px-2">PnL ($)</th>
+                                <th class="py-3 px-2 columna-detalle">RSI</th>
+                                <th class="py-3 px-2 columna-detalle">Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cuerpo" class="divide-y divide-slate-800/50">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     </div>
 
     <script>
-        // 1. REEMPLAZA ESTAS DOS LÍNEAS con tus datos de Supabase (Project URL y Anon Key)
-        const supabaseUrl = 'TU_PROJECT_URL_AQUI';
-        const supabaseKey = 'TU_ANON_PUBLIC_KEY_AQUI';
-        
+        // CONFIGURACIÓN DE CREDENCIALES
+        const supabaseUrl = 'https://tdkhfbiltatjwzaubxtv.supabase.co';
+        const supabaseKey = 'sb_publishable_nEVEwlTt78w6vjcYMYr4kQ_DS4mxM50';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // 2. Función de prueba
-        document.getElementById('btn-probar').addEventListener('click', async () => {
-            const mensaje = document.getElementById('mensaje-estado');
-            mensaje.innerText = "Conectando...";
-            mensaje.className = "mt-3 text-sm text-yellow-400";
+        // Control de vista simple
+        let vistaSimpleActiva = false;
+        document.getElementById('btn-vista-simple').addEventListener('click', () => {
+            vistaSimpleActiva = !vistaSimpleActiva;
+            document.querySelectorAll('.columna-detalle').forEach(el => {
+                el.style.display = vistaSimpleActiva ? 'none' : 'table-cell';
+            });
+        });
 
-            const { data, error } = await supabase
+        // 1. LEER DATOS (SELECT) Y ACTUALIZAR MÉTRICAS
+        async function cargarBitacora() {
+            const { data: operaciones, error } = await supabase
                 .from('bitacora_trading')
-                .select('*');
-            
+                .select('*')
+                .order('fecha_operacion', { ascending: false });
+
             if (error) {
-                console.error("Error:", error);
-                mensaje.innerText = "Error de conexión. Revisa la consola o las políticas RLS.";
-                mensaje.className = "mt-3 text-sm text-red-400";
+                console.error('Error al descargar historial:', error.message);
+                return;
+            }
+
+            // Renderizar Filas de la Tabla
+            const cuerpo = document.getElementById('tabla-cuerpo');
+            cuerpo.innerHTML = '';
+
+            let pnlTotal = 0;
+            let operacionesGanadoras = 0;
+
+            operaciones.forEach(op => {
+                pnlTotal += parseFloat(op.resultado_pnl || 0);
+                if (parseFloat(op.resultado_pnl) > 0) operacionesGanadoras++;
+
+                const clasePnL = op.resultado_pnl >= 0 ? 'text-emerald-400 font-semibold' : 'text-rose-500 font-semibold';
+                const claseDireccion = op.direccion === 'COMPRA' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400';
+
+                const fila = document.createElement('tr');
+                fila.className = 'hover:bg-slate-800/30 transition-colors';
+                fila.innerHTML = `
+                    <td class="py-3 px-2 font-medium text-slate-200">${op.activo}</td>
+                    <td class="py-3 px-2"><span class="text-xs px-2 py-0.5 rounded ${claseDireccion}">${op.direccion}</span></td>
+                    <td class="py-3 px-2 text-slate-300">${op.precio_entrada}</td>
+                    <td class="py-3 px-2 text-slate-300">${op.precio_salida || '-'}</td>
+                    <td class="py-3 px-2 ${clasePnL}">${op.resultado_pnl >= 0 ? '+' : ''}${op.resultado_pnl}</td>
+                    <td class="py-3 px-2 text-slate-400 columna-detalle">${op.rsi_nivel || '-'}</td>
+                    <td class="py-3 px-2 text-slate-400 text-xs max-w-xs truncate columna-detalle" title="${op.notas || ''}">${op.notas || '-'}</td>
+                `;
+                cuerpo.appendChild(fila);
+            });
+
+            // Actualizar Tarjetas Estadísticas
+            const totalOps = operaciones.length;
+            const winRate = totalOps > 0 ? Math.round((operacionesGanadoras / totalOps) * 100) : 0;
+
+            document.getElementById('stat-totales').innerText = totalOps;
+            
+            const txtPnL = document.getElementById('stat-pnl');
+            txtPnL.innerText = `$${pnlTotal.toFixed(2)}`;
+            txtPnL.className = pnlTotal >= 0 ? 'text-2xl font-bold mt-1 text-emerald-400' : 'text-2xl font-bold mt-1 text-rose-500';
+            
+            document.getElementById('stat-winrate').innerText = `${winRate}%`;
+
+            // Mantener preferencia de vista si se recarga
+            document.querySelectorAll('.columna-detalle').forEach(el => {
+                el.style.display = vistaSimpleActiva ? 'none' : 'table-cell';
+            });
+        }
+
+        // 2. ENVIAR DATOS (INSERT)
+        document.getElementById('form-trading').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const datosTrade = {
+                activo: document.getElementById('activo').value.toUpperCase().trim(),
+                direccion: document.getElementById('direccion').value,
+                precio_entrada: parseFloat(document.getElementById('precio_entrada').value),
+                precio_salida: document.getElementById('precio_salida').value ? parseFloat(document.getElementById('precio_salida').value) : null,
+                lote_aje_contratos: document.getElementById('lote').value ? parseFloat(document.getElementById('lote').value) : null,
+                resultado_pnl: parseFloat(document.getElementById('pnl').value),
+                rsi_nivel: document.getElementById('rsi').value ? parseInt(document.getElementById('rsi').value) : null,
+                notas: document.getElementById('notas').value.trim() || null
+            };
+
+            const { error } = await supabase
+                .from('bitacora_trading')
+                .insert([datosTrade]);
+
+            if (error) {
+                alert('Error al guardar el trade: ' + error.message);
             } else {
-                console.log("Datos:", data);
-                mensaje.innerText = "¡Conexión exitosa! Base de datos enlazada correctamente.";
-                mensaje.className = "mt-3 text-sm text-green-400";
+                document.getElementById('form-trading').reset(); // Limpiar formulario
+                await cargarBitacora(); // Recargar la tabla y estadísticas al instante
             }
         });
+
+        // Carga inicial al abrir la página web
+        window.addEventListener('DOMContentLoaded', cargarBitacora);
     </script>
 </body>
 </html>
