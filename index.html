@@ -155,6 +155,9 @@
         <div class="glass-card p-6 w-full max-w-sm">
             <h3 class="text-lg font-bold mb-4 text-emerald-400">Editar Operación</h3>
             <input type="hidden" id="modal-edit-id">
+            <input type="hidden" id="modal-edit-orig-lotaje">
+            <input type="hidden" id="modal-edit-orig-riesgo">
+            
             <div class="mb-3"><label>Activo</label><input type="text" id="modal-edit-activo"></div>
             <div class="grid grid-cols-2 gap-3 mb-3"><div><label>Estado</label><select id="modal-edit-estado"><option value="ABIERTA">Abierta</option><option value="BREAKEVEN">BreakEven</option><option value="CERRADA">Cerrada</option></select></div><div><label>Lotaje Actual</label><input type="number" id="modal-edit-lotaje" step="any"></div></div>
             <div class="grid grid-cols-2 gap-3 mb-4"><div><label>Precio Entrada</label><input type="number" id="modal-edit-entrada" step="any"></div><div><label>PnL Total</label><input type="number" id="modal-edit-pnl" step="any"></div></div>
@@ -170,7 +173,7 @@
 
         let chartInstance = null;
         let capitalBaseGlobal = 0;
-        let capitalDisponibleGlobal = 0; // NUEVA VARIABLE DINÁMICA
+        let capitalDisponibleGlobal = 0;
         let operacionActualCalculada = { tamano: 0, riesgoUsdt: 0 };
         let operacionesCargadas = [];
 
@@ -178,7 +181,6 @@
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 
-        // --- GESTIÓN DE CAPITAL ---
         function abrirModalCapital(tipo) {
             document.getElementById('modal-cap-tipo').value = tipo;
             document.getElementById('modal-cap-titulo').innerText = tipo === 'DEPOSITO' ? 'Inyectar Capital' : 'Retirar Capital';
@@ -196,7 +198,6 @@
 
         function toggleOtro() { document.getElementById('div-otro').style.display = document.getElementById('activo').value === 'OTRO' ? 'block' : 'none'; }
 
-        // --- NUEVA LÓGICA DE CÁLCULO DE SL ---
         function calcularSlPorDistancia() {
             const ent = parseFloat(document.getElementById('entrada').value) || 0;
             const dist = parseFloat(document.getElementById('sl-distancia').value) || 0;
@@ -214,9 +215,7 @@
             calcularRiesgo();
         }
 
-        // --- RIESGO BASADO EN CAPITAL DISPONIBLE Y VOLUMEN ---
         function calcularRiesgo() {
-            // AHORA USA EL CAPITAL DISPONIBLE
             const rP = parseFloat(document.getElementById('riesgoP').value) || 0;
             const comisionP = parseFloat(document.getElementById('comision').value) || 0;
             const ent = parseFloat(document.getElementById('entrada').value) || 0;
@@ -331,9 +330,14 @@
                             <div><h3 class="font-bold text-lg">${op.activo} <span class="text-[10px] px-1.5 py-0.5 rounded ${badgeCls} ml-1">${op.direccion}</span></h3><span class="text-xs text-slate-400 border border-slate-600 bg-slate-800 rounded px-1">${op.temporalidad}</span></div>
                             <div class="text-right"><div class="text-xs text-slate-400">${fecha} ${hora}</div>${op.estado === 'CERRADA' ? `<div class="font-bold text-lg mt-1 ${pnlOp >= 0 ? 'text-neon-green' : 'text-neon-red'}">${pnlOp >= 0 ? '+' : ''}$${pnlOp.toFixed(2)}</div>` : ''}</div>
                         </div>
-                        <div class="flex justify-between text-sm pl-2">
+                        <div class="flex justify-between text-sm pl-2 mt-2">
                             <div><span class="text-slate-400 text-[10px] uppercase block">Entrada</span><span class="font-bold">${op.precio_entrada}</span></div>
-                            <div><span class="text-slate-400 text-[10px] uppercase block">Riesgo</span><span class="${op.estado === 'ABIERTA' ? 'text-neon-red font-bold' : 'text-slate-500 line-through'}">-$${parseFloat(op.riesgo_usdt).toFixed(2)}</span></div>
+                            <div>
+                                <span class="text-slate-400 text-[10px] uppercase block">Riesgo</span>
+                                <span class="${op.estado === 'ABIERTA' ? 'text-neon-red font-bold' : 'text-slate-500 line-through'}">
+                                    -$${parseFloat(op.riesgo_usdt).toFixed(2)} <span class="text-[10px] text-slate-400 font-normal ml-0.5">(${parseFloat(op.riesgo_porcentaje || 0).toFixed(1)}%)</span>
+                                </span>
+                            </div>
                             <div><span class="text-slate-400 text-[10px] uppercase block">Lotaje Act.</span><span class="font-bold">${parseFloat(op.lotaje).toFixed(5)}</span></div>
                         </div>
                         ${htmlParciales}
@@ -345,7 +349,6 @@
                 else { historialPnl.unshift(pnlTotal); cerradasHTML.push(cardHTML); }
             });
 
-            // ACTUALIZACIÓN DE GLOBALES DINÁMICAS
             const capitalActual = capitalBaseGlobal + pnlTotal;
             capitalDisponibleGlobal = capitalActual - riesgoFlotante;
             const totalCerradas = wins + losses + bes;
@@ -364,10 +367,9 @@
             document.getElementById('lista-cerradas').innerHTML = cerradasHTML.length ? cerradasHTML.join('') : '<p class="text-slate-500 text-sm italic">El historial está vacío.</p>';
 
             actualizarGrafica(historialPnl, capitalBaseGlobal);
-            calcularRiesgo(); // Recalcula el form inmediatamente tras pintar el nuevo disponible
+            calcularRiesgo(); 
         }
 
-        // --- CÓDIGO DE MODALES CIERRE Y EDICIÓN (MANTENIDOS) ---
         function abrirModalCierre(id) {
             const op = operacionesCargadas.find(o => o.id === id);
             document.getElementById('modal-cierre-id').value = id; document.getElementById('modal-cierre-max-lot').value = op.lotaje;
@@ -408,17 +410,43 @@
 
         function abrirModalEditar(id) {
             const op = operacionesCargadas.find(o => o.id === id);
-            document.getElementById('modal-edit-id').value = id; document.getElementById('modal-edit-activo').value = op.activo;
-            document.getElementById('modal-edit-estado').value = op.estado; document.getElementById('modal-edit-lotaje').value = op.lotaje;
-            document.getElementById('modal-edit-entrada').value = op.precio_entrada; document.getElementById('modal-edit-pnl').value = op.resultado_pnl;
-            document.getElementById('modalEditar').classList.remove('hidden'); document.getElementById('modalEditar').classList.add('flex');
+            document.getElementById('modal-edit-id').value = id; 
+            document.getElementById('modal-edit-orig-lotaje').value = op.lotaje;
+            document.getElementById('modal-edit-orig-riesgo').value = op.riesgo_usdt;
+            
+            document.getElementById('modal-edit-activo').value = op.activo;
+            document.getElementById('modal-edit-estado').value = op.estado; 
+            document.getElementById('modal-edit-lotaje').value = op.lotaje;
+            document.getElementById('modal-edit-entrada').value = op.precio_entrada; 
+            document.getElementById('modal-edit-pnl').value = op.resultado_pnl;
+            
+            document.getElementById('modalEditar').classList.remove('hidden'); 
+            document.getElementById('modalEditar').classList.add('flex');
         }
 
         async function guardarEdicion() {
             const id = document.getElementById('modal-edit-id').value;
-            const up = { activo: document.getElementById('modal-edit-activo').value.toUpperCase(), estado: document.getElementById('modal-edit-estado').value, lotaje: parseFloat(document.getElementById('modal-edit-lotaje').value), precio_entrada: parseFloat(document.getElementById('modal-edit-entrada').value), resultado_pnl: parseFloat(document.getElementById('modal-edit-pnl').value) };
+            const lotajeOriginal = parseFloat(document.getElementById('modal-edit-orig-lotaje').value);
+            const riesgoOriginal = parseFloat(document.getElementById('modal-edit-orig-riesgo').value);
+            const nuevoLotaje = parseFloat(document.getElementById('modal-edit-lotaje').value);
+            
+            let nuevoRiesgoUsdt = riesgoOriginal;
+            if (lotajeOriginal > 0 && nuevoLotaje !== lotajeOriginal) {
+                nuevoRiesgoUsdt = (nuevoLotaje / lotajeOriginal) * riesgoOriginal;
+            }
+
+            const up = { 
+                activo: document.getElementById('modal-edit-activo').value.toUpperCase(), 
+                estado: document.getElementById('modal-edit-estado').value, 
+                lotaje: nuevoLotaje, 
+                riesgo_usdt: nuevoRiesgoUsdt,
+                precio_entrada: parseFloat(document.getElementById('modal-edit-entrada').value), 
+                resultado_pnl: parseFloat(document.getElementById('modal-edit-pnl').value) 
+            };
+            
             await db.from('bitacora_trading').update(up).eq('id', id);
-            cerrarModal('modalEditar'); cargarDatos();
+            cerrarModal('modalEditar'); 
+            cargarDatos();
         }
 
         async function eliminar(id) {
