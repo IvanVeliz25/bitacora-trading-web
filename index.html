@@ -300,10 +300,25 @@
             if (op.estado === 'ABIERTA' && parseFloat(progreso) >= 100 && !opsNotificadas.includes(op.id)) {
                 
                 if (window.Notification && Notification.permission === "granted") {
-                    new Notification(`🚨 REVISAR TRADING: ${op.activo}`, {
-                        body: `Tu posición en ${op.temporalidad} (${op.direccion}) alcanzó el 100% de velas esperadas. ¡Toma acción!`,
-                        tag: op.id // Evita duplicados en el centro de notificaciones del sistema
-                    });
+                    const titulo = `🚨 REVISAR TRADING: ${op.activo}`;
+                    const opciones = {
+                        body: `Tu posición en ${op.temporalidad} (${op.direccion}) alcanzó el 100%. ¡Toma acción!`,
+                        tag: op.id, // Evita duplicados
+                        icon: 'icon-192.png' // Usa tu nuevo icono para que se vea profesional en el celular
+                    };
+
+                    // La forma moderna y obligatoria para celulares (PWA)
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.ready.then(registration => {
+                            registration.showNotification(titulo, opciones);
+                        }).catch(err => {
+                            // Si el Service Worker falla, intenta el método clásico de PC
+                            new Notification(titulo, opciones);
+                        });
+                    } else {
+                        // Para navegadores viejos o sin Service Worker
+                        new Notification(titulo, opciones);
+                    }
 
                     // Guardar ID para no volver a notificar este trade
                     opsNotificadas.push(op.id);
