@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Zasweb - Trading Journal Pro</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -631,5 +636,16 @@
             chartInstance = new Chart(ctx, { type: 'line', data: { labels: arrayCurva.map((_, i) => `Op ${i}`), datasets: [{ label: 'Capital', data: arrayCurva, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0f172a', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } });
         }
     </script>
+
+<script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('SW registrado', reg))
+                    .catch(err => console.log('Error en SW', err));
+            });
+        }
+    </script>
+
 </body>
 </html>
