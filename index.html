@@ -210,8 +210,16 @@
         let operacionesCargadas = [];
 
         window.addEventListener('DOMContentLoaded', () => { 
+            // 1. Solicitar permiso para enviar notificaciones al usuario
+            if (window.Notification && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+
             asignarRiesgoAutomatico(); 
             cargarDatos(); 
+            
+            // 2. Auto-actualizar los datos en segundo plano cada 60 segundos
+            setInterval(cargarDatos, 60000);
         });
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
@@ -267,6 +275,27 @@
         }
 
         function limpiarDistancia() { document.getElementById('sl-distancia').value = ''; calcularRiesgo(); }
+
+// Historial local para no repetir notificaciones de la misma operación
+        let opsNotificadas = JSON.parse(localStorage.getItem('ops_notificadas') || '[]');
+
+        function comprobarYNotificar(op, progreso) {
+            // Solo alertar si está ABIERTA, llegó al 100% y no ha sido notificada antes
+            if (op.estado === 'ABIERTA' && parseFloat(progreso) >= 100 && !opsNotificadas.includes(op.id)) {
+                
+                if (window.Notification && Notification.permission === "granted") {
+                    new Notification(`🚨 REVISAR TRADING: ${op.activo}`, {
+                        body: `Tu posición en ${op.temporalidad} (${op.direccion}) alcanzó el 100% de velas esperadas. ¡Toma acción!`,
+                        tag: op.id // Evita duplicados en el centro de notificaciones del sistema
+                    });
+
+                    // Guardar ID para no volver a notificar este trade
+                    opsNotificadas.push(op.id);
+                    localStorage.setItem('ops_notificadas', JSON.stringify(opsNotificadas));
+                }
+            }
+        }
+
 
         function calcularRiesgo() {
             const rP = parseFloat(document.getElementById('riesgoP').value) || 0;
@@ -407,9 +436,13 @@
                     htmlParciales += `</div>`;
                 }
 
-                let barraHTML = '';
+            let barraHTML = '';
                 if(op.estado === 'ABIERTA' || op.estado === 'BREAKEVEN') {
                     const prog = calcularProgresoVelas(op.fecha_operacion, op.temporalidad);
+                    
+                    // ◄ AÑADE ESTA LÍNEA AQUÍ PARA DISPARAR LA ALERTA
+                    comprobarYNotificar(op, prog.progress);
+
                     barraHTML = `
                         <div class="mt-3 bg-slate-900/50 p-2 rounded border border-slate-700/50">
                             <div class="flex justify-between text-[9px] text-slate-400 mb-1 font-bold uppercase tracking-wider">
