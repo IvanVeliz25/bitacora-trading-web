@@ -266,7 +266,7 @@
             let tamano = 0; let volumen = 0;
 
             if (ent > 0 && sl > 0 && ent !== sl) {
-                const divisor = Math.abs(ent - sl) + (ent + sl) * ((comisionP / 100) * 2);
+                const divisor = Math.abs(ent - sl) + (ent + sl) * ((comisionP / 100));
                 tamano = riesgoUsdt / divisor;
                 volumen = tamano * ent;
             }
@@ -553,7 +553,7 @@
 
             let nuevoRiesgoUsdt = parseFloat(opOrig.riesgo_usdt);
             if (nuevoEstado === 'ABIERTA') {
-                const divisor = Math.abs(nuevoEntrada - opOrig.precio_sl) + (nuevoEntrada + opOrig.precio_sl) * ((comisionGlobal / 100) * 2);
+                const divisor = Math.abs(nuevoEntrada - opOrig.precio_sl) + (nuevoEntrada + opOrig.precio_sl) * ((comisionGlobal / 100));
                 nuevoRiesgoUsdt = nuevoLotaje * divisor;
             }
 
