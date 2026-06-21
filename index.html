@@ -215,16 +215,25 @@
         let operacionesCargadas = [];
 
         window.addEventListener('DOMContentLoaded', () => { 
-            // 1. Solicitar permiso para enviar notificaciones al usuario
-            if (window.Notification && Notification.permission !== "granted" && Notification.permission !== "denied") {
-                Notification.requestPermission();
-            }
-
+            // 1. PRIMERO cargamos la base de datos (Si el móvil bloquea algo, esto ya se ejecutó)
             asignarRiesgoAutomatico(); 
             cargarDatos(); 
             
-            // 2. Auto-actualizar los datos en segundo plano cada 60 segundos
+            // 2. Arrancamos el auto-actualizador
             setInterval(cargarDatos, 60000);
+
+            // 3. Pedimos notificaciones de forma segura a prueba de "crasheos"
+            try {
+                if ('Notification' in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    // El .catch evita que los navegadores móviles rompan la app si rechazan la petición
+                    let promise = Notification.requestPermission();
+                    if (promise) {
+                        promise.catch(err => console.log("Permiso de notificación ignorado", err));
+                    }
+                }
+            } catch (error) {
+                console.log("El navegador móvil no soporta notificaciones automáticas", error);
+            }
         });
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
