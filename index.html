@@ -283,6 +283,13 @@
             renderizarEstadisticas();
         }
 
+        // --- AGREGA ESTA FUNCIÓN PARA QUE EL BOTÓN FUNCIONE ---
+        async function accionEscudo(id) {
+            // Actualiza el estado a BREAKEVEN en la base de datos
+            await db.from('bitacora_trading').update({ estado: 'BREAKEVEN' }).eq('id', id);
+            // Al recargar, la matemática ignora el riesgo de esta operación y el capital vuelve a tu cuenta
+            cargarDatos();
+        }
 function renderizarEstadisticas() {
             let pnlTotal = 0; let riesgoFlotante = 0; let wins = 0, losses = 0, bes = 0;
             const abiertasHTML = []; const cerradasHTML = []; const historialPnl = [0];
@@ -325,8 +332,10 @@ function renderizarEstadisticas() {
                     htmlParciales += `</div>`;
                 }
 
+// --- REEMPLAZA LA VARIABLE cardButtons POR ESTA ---
                 const cardButtons = op.estado === 'ABIERTA' || op.estado === 'BREAKEVEN' ? `
                     <div class="flex gap-2 pl-2 mt-3">
+                        ${op.estado === 'ABIERTA' ? `<button onclick="accionEscudo('${op.id}')" title="Proteger a BreakEven" class="flex-1 bg-slate-800 hover:bg-yellow-600/80 border border-slate-600 text-slate-300 py-1.5 rounded text-xs font-bold transition">🛡️ BK</button>` : `<div class="flex-1 text-center bg-yellow-900/30 text-yellow-500 py-1.5 rounded text-[10px] font-bold border border-yellow-700/50 flex items-center justify-center">🛡️ PROTEGIDO</div>`}
                         <button onclick="abrirModalCierre('${op.id}')" class="flex-1 bg-blue-600/20 text-blue-400 border border-blue-600/50 hover:bg-blue-600/40 py-1.5 rounded text-xs font-bold transition">Cerrar</button>
                         <button onclick="abrirModalEditar('${op.id}')" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-1.5 rounded text-xs transition">✏️ Editar</button>
                         <button onclick="eliminar('${op.id}')" class="px-3 bg-rose-900/30 hover:bg-rose-900 text-rose-400 border border-rose-900 rounded transition">🗑</button>
