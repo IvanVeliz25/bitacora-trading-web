@@ -61,20 +61,21 @@
             </div>
         </div>
 
-        <!-- CURVA DE CAPITAL CON FILTROS -->
-        <div class="glass-card p-4 hidden lg:block lg:col-span-2">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-sm text-slate-200 font-bold">Curva de Capital</span>
-                <!-- SELECTOR DE TEMPORALIDAD DE GRAFICO -->
-                <div class="flex gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700 text-xs">
-                    <button onclick="cambiarFiltroGrafica('DIARIO')" id="btn-chart-DIARIO" class="btn-chart-filter px-2.5 py-1 rounded transition text-slate-400 hover:text-white">Diario</button>
-                    <button onclick="cambiarFiltroGrafica('SEMANAL')" id="btn-chart-SEMANAL" class="btn-chart-filter px-2.5 py-1 rounded transition text-slate-400 hover:text-white">Semanal</button>
-                    <button onclick="cambiarFiltroGrafica('MENSUAL')" id="btn-chart-MENSUAL" class="btn-chart-filter px-2.5 py-1 rounded transition text-slate-400 hover:text-white">Mensual</button>
-                    <button onclick="cambiarFiltroGrafica('TODO')" id="btn-chart-TODO" class="btn-chart-filter px-2.5 py-1 rounded transition bg-blue-600 text-white font-bold">Todo</button>
-                </div>
-            </div>
-            <div class="h-36 w-full"><canvas id="chartCapital"></canvas></div>
+<!-- CURVA DE CAPITAL CON FILTROS -->
+<div class="glass-card p-4 lg:col-span-2">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+        <span class="text-sm text-slate-200 font-bold">Curva de Capital</span>
+        <!-- SELECTOR DE TEMPORALIDAD DE GRAFICO -->
+        <div class="flex gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700 text-xs w-full sm:w-auto justify-between sm:justify-start">
+            <button onclick="cambiarFiltroGrafica('DIARIO')" id="btn-chart-DIARIO" class="btn-chart-filter flex-1 sm:flex-initial px-2.5 py-1 rounded transition text-slate-400 hover:text-white text-center">Diario</button>
+            <button onclick="cambiarFiltroGrafica('SEMANAL')" id="btn-chart-SEMANAL" class="btn-chart-filter flex-1 sm:flex-initial px-2.5 py-1 rounded transition text-slate-400 hover:text-white text-center">Semanal</button>
+            <button onclick="cambiarFiltroGrafica('MENSUAL')" id="btn-chart-MENSUAL" class="btn-chart-filter flex-1 sm:flex-initial px-2.5 py-1 rounded transition text-slate-400 hover:text-white text-center">Mensual</button>
+            <button onclick="cambiarFiltroGrafica('TODO')" id="btn-chart-TODO" class="btn-chart-filter flex-1 sm:flex-initial px-2.5 py-1 rounded transition bg-blue-600 text-white font-bold text-center">Todo</button>
         </div>
+    </div>
+    <div class="h-44 sm:h-36 w-full"><canvas id="chartCapital"></canvas></div>
+</div>
+
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
