@@ -39,6 +39,7 @@
 <body class="p-4 md:p-8 max-w-7xl mx-auto">
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <!-- CARD CAPITAL DISPONIBLE -->
         <div class="glass-card p-4 bg-slate-800/50 border-blue-500/30 lg:col-span-1">
             <label class="text-blue-400 mb-1 flex justify-between">Capital Disponible</label>
             <div id="stat-capital-disp" class="text-4xl font-bold text-white mb-4">$0.00</div>
@@ -48,15 +49,31 @@
                 <button onclick="abrirModalCapital('RETIRO')" class="flex-1 bg-rose-600/20 text-rose-400 border border-rose-600/50 hover:bg-rose-600/40 py-2 rounded text-sm font-bold transition">- Retirar</button>
             </div>
             
-            <div class="flex justify-between items-center border-t border-slate-700 pt-3">
+            <div class="flex justify-between items-center border-t border-slate-700 pt-3 mb-2">
                 <span class="text-xs text-slate-400 uppercase font-bold">Base Inicial:</span>
                 <span id="stat-capital-base" class="text-sm text-slate-300 font-bold">$0.00</span>
             </div>
+
+            <!-- RIESGO FLOTANTE EN POSICIONES ABIERTAS -->
+            <div class="flex justify-between items-center border-t border-slate-700/60 pt-2 text-xs">
+                <span class="text-slate-400 uppercase font-bold flex items-center gap-1">⚠️ Riesgo en Mercado:</span>
+                <span id="stat-riesgo-flotante" class="font-bold text-rose-400">-$0.00 (0.00%)</span>
+            </div>
         </div>
 
+        <!-- CURVA DE CAPITAL CON FILTROS -->
         <div class="glass-card p-4 hidden lg:block lg:col-span-2">
-            <span class="text-sm text-slate-200 font-bold mb-2 block">Curva de Capital</span>
-            <div class="h-32 w-full"><canvas id="chartCapital"></canvas></div>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-slate-200 font-bold">Curva de Capital</span>
+                <!-- SELECTOR DE TEMPORALIDAD DE GRAFICO -->
+                <div class="flex gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700 text-xs">
+                    <button onclick="cambiarFiltroGrafica('DIARIO')" id="btn-chart-DIARIO" class="btn-chart-filter px-2.5 py-1 rounded transition text-slate-400 hover:text-white">Diario</button>
+                    <button onclick="cambiarFiltroGrafica('SEMANAL')" id="btn-chart-SEMANAL" class="btn-chart-filter px-2.5 py-1 rounded transition text-slate-400 hover:text-white">Semanal</button>
+                    <button onclick="cambiarFiltroGrafica('MENSUAL')" id="btn-chart-MENSUAL" class="btn-chart-filter px-2.5 py-1 rounded transition text-slate-400 hover:text-white">Mensual</button>
+                    <button onclick="cambiarFiltroGrafica('TODO')" id="btn-chart-TODO" class="btn-chart-filter px-2.5 py-1 rounded transition bg-blue-600 text-white font-bold">Todo</button>
+                </div>
+            </div>
+            <div class="h-36 w-full"><canvas id="chartCapital"></canvas></div>
         </div>
     </div>
 
@@ -145,7 +162,17 @@
                 <button onclick="guardarOperacion()" id="btnGuardar" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-lg transition shadow-lg text-base">Abrir Posición</button>
             </div>
 
+            <!-- ESTADÍSTICAS GENERALES Y DEL DÍA -->
             <div class="grid grid-cols-2 gap-4">
+                <!-- PNL DÍA DE HOY -->
+                <div class="glass-card p-4 col-span-2 border-slate-600 bg-slate-800/60">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase">Resultado Hoy</span>
+                        <span id="stat-hoy-pct" class="text-xs font-bold text-slate-400">0.00%</span>
+                    </div>
+                    <div id="stat-hoy-pnl" class="text-2xl font-bold text-slate-200">$0.00</div>
+                </div>
+
                 <div class="glass-card p-4 col-span-1">
                     <span class="text-[10px] text-slate-400 font-bold uppercase mb-1 block">Total Ops</span>
                     <div id="stat-ops" class="text-xl font-bold">0</div>
@@ -161,6 +188,17 @@
                 <div class="glass-card p-4 col-span-2 border-slate-600 bg-slate-800/30">
                     <span class="text-[10px] text-slate-400 font-bold uppercase mb-1 block">PnL Total Acumulado</span>
                     <div id="stat-pnl" class="text-3xl font-bold text-slate-300">$0.00</div>
+                </div>
+            </div>
+
+            <!-- TOP ACTIVOS DEL MES -->
+            <div class="glass-card p-5 border-slate-700">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Top Activos (Mes Actual)</h3>
+                    <span class="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded font-bold">Exclusivo Mensual</span>
+                </div>
+                <div id="lista-top-activos" class="space-y-2">
+                    <p class="text-slate-500 text-xs italic text-center py-2">Sin datos este mes.</p>
                 </div>
             </div>
         </div>
@@ -231,7 +269,8 @@
         let capitalDisponibleGlobal = 0;
         let operacionActualCalculada = { tamano: 0, riesgoUsdt: 0, riesgoP: 1 };
         let operacionesCargadas = [];
-        let lastRiskSource = 'porcentaje'; // Rastrea si estás editando %, USD o lotaje
+        let lastRiskSource = 'porcentaje';
+        let filtroGraficaActual = 'TODO'; // TODO, DIARIO, SEMANAL, MENSUAL
 
         window.addEventListener('DOMContentLoaded', () => { 
             asignarRiesgoAutomatico(); 
@@ -263,7 +302,7 @@
                 if(res.ok) {
                     const data = await res.json();
                     document.getElementById('entrada').value = parseFloat(data.price);
-                    calcularSlPorDistancia(); // Recalcula el SL y los riesgos
+                    calcularSlPorDistancia();
                 }
             } catch (error) {
                 console.warn(`No se pudo obtener precio para ${par}`, error);
@@ -275,17 +314,15 @@
         // --- LÓGICA DE ESCALONAMIENTO DE CAPITAL ---
         function getCapitalBaseParaRiesgo(capital) {
             if (capital <= 0) return 0;
-            // Define el tamaño del "escalón" o bloque
             let step = 10;
-            if (capital >= 1000) step = 100; // Ej: 1000 a 1099 -> Base 1000
-            else step = 10;                  // Ej: 107 a 115 -> Base 100 y 110
-            
+            if (capital >= 1000) step = 100;
+            else step = 10;
             return Math.floor(capital / step) * step;
         }
 
         // --- CALCULOS DE RIESGO MUTUOS ---
         function calcularRiesgo(source = lastRiskSource) {
-            lastRiskSource = source; // Recuerda el último campo que editaste
+            lastRiskSource = source;
             
             const capBase = getCapitalBaseParaRiesgo(capitalDisponibleGlobal);
             document.getElementById('cap-base-riesgo').innerText = `$${capBase.toFixed(2)}`;
@@ -299,7 +336,6 @@
             const sl = parseFloat(document.getElementById('sl').value) || 0;
 
             let divisor = 0;
-            // Calcula cuánto riesgo ($) equivale a 1 Lote exacto
             if (ent > 0 && sl > 0 && ent !== sl) {
                 divisor = Math.abs(ent - sl) + (ent + sl) * ((comisionP / 100));
             }
@@ -333,7 +369,6 @@
                 }
             }
 
-            // Guardar global para creación
             operacionActualCalculada = { 
                 tamano: parseFloat(inputLot.value) || 0, 
                 riesgoUsdt: parseFloat(inputUsd.value) || 0,
@@ -344,7 +379,6 @@
             document.getElementById('volumen-calc').innerText = `$${volumen.toFixed(2)}`;
         }
 
-        // --- AUTO ASIGNACION Y DEMAS ---
         function toggleOtro() { document.getElementById('div-otro').style.display = document.getElementById('activo').value === 'OTRO' ? 'block' : 'none'; }
 
         function asignarRiesgoAutomatico() {
@@ -362,7 +396,7 @@
             else if (tfBaja) riesgo = 0.25;
 
             document.getElementById('riesgoP').value = riesgo;
-            calcularRiesgo('porcentaje'); // Actualiza todo en cascada
+            calcularRiesgo('porcentaje');
         }
 
         function calcularSlPorDistancia() {
@@ -447,35 +481,51 @@
 
         function renderizarEstadisticas() {
             let pnlTotal = 0; let riesgoFlotante = 0; let wins = 0, losses = 0, bes = 0;
-            const abiertasHTML = []; const cerradasHTML = []; const historialPnl = [0];
+            let pnlHoy = 0;
+            const hoyString = new Date().toDateString();
+
+            const abiertasHTML = []; const cerradasHTML = [];
             const comisionGlobal = parseFloat(document.getElementById('comision').value) || 0;
 
             operacionesCargadas.forEach(op => {
                 const pnlOp = parseFloat(op.resultado_pnl || 0);
                 let riesgoOpCalculado = parseFloat(op.riesgo_usdt || 0);
+                const opFecha = new Date(op.fecha_operacion);
                 
                 if (op.estado === 'ABIERTA') {
                     const divisor = Math.abs(op.precio_entrada - op.precio_sl) + (op.precio_entrada + op.precio_sl) * ((comisionGlobal / 100) * 2);
                     riesgoOpCalculado = op.lotaje * divisor;
                     riesgoFlotante += riesgoOpCalculado;
-                } else if(op.estado === 'CERRADA' || op.estado === 'BREAKEVEN') pnlTotal += pnlOp;
+                } else if(op.estado === 'CERRADA' || op.estado === 'BREAKEVEN') {
+                    pnlTotal += pnlOp;
+                    
+                    // CALCULO RENTABILIDAD DEL DÍA DE HOY
+                    if (opFecha.toDateString() === hoyString) {
+                        pnlHoy += pnlOp;
+                    }
+                }
 
                 if(op.estado === 'CERRADA' || (op.estado === 'BREAKEVEN' && pnlOp != 0)) {
                     if(pnlOp > 0) wins++; else if(pnlOp < 0) losses++; else bes++;
                 } else if (op.estado === 'BREAKEVEN' && pnlOp == 0) bes++;
 
-                const fechaObj = new Date(op.fecha_operacion);
-                const fecha = fechaObj.toLocaleDateString('es-ES', {month:'short', day:'numeric'});
-                const hora = fechaObj.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+                const fecha = opFecha.toLocaleDateString('es-ES', {month:'short', day:'numeric'});
+                const hora = opFecha.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
                 const badgeCls = op.direccion === 'LONG' ? 'bg-long' : 'bg-short';
                 
                 let htmlParciales = '';
                 if(op.historial_parciales && op.historial_parciales.length > 0) {
                     htmlParciales = `<div class="mt-3 pt-2 border-t border-slate-700/50 text-xs">`;
                     op.historial_parciales.forEach(p => {
-                        const dateP = new Date(p.fecha).toLocaleString('es-ES', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                        const datePObj = new Date(p.fecha);
+                        const dateP = datePObj.toLocaleString('es-ES', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
                         const pSign = p.pnl >= 0 ? '+' : ''; const pCol = p.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400';
                         htmlParciales += `<div class="flex justify-between text-slate-400 mb-1"><span>↳ Parcial (${p.lotaje} lot)</span><span>${dateP} <b class="${pCol} ml-2">${pSign}$${p.pnl}</b></span></div>`;
+                        
+                        // Si hubo parcial cerrado hoy
+                        if(datePObj.toDateString() === hoyString && op.estado === 'ABIERTA') {
+                            pnlHoy += parseFloat(p.pnl || 0);
+                        }
                     });
                     htmlParciales += `</div>`;
                 }
@@ -522,14 +572,28 @@
                 `;
 
                 if(op.estado === 'ABIERTA' || op.estado === 'BREAKEVEN') abiertasHTML.push(cardHTML);
-                else { historialPnl.unshift(pnlTotal); cerradasHTML.push(cardHTML); }
+                else { cerradasHTML.push(cardHTML); }
             });
 
             const capitalActual = capitalBaseGlobal + pnlTotal;
             capitalDisponibleGlobal = capitalActual - riesgoFlotante;
             
+            // 1. RIESGO EN MERCADO (BAJO CAPITAL DISPONIBLE)
+            const riesgoPctTotal = capitalActual > 0 ? (riesgoFlotante / capitalActual) * 100 : 0;
+            document.getElementById('stat-riesgo-flotante').innerText = `-$${riesgoFlotante.toFixed(2)} (${riesgoPctTotal.toFixed(2)}%)`;
+
             document.getElementById('stat-capital-disp').innerText = `$${capitalDisponibleGlobal.toFixed(2)}`;
             document.getElementById('stat-capital-disp').className = `text-4xl font-bold ${capitalDisponibleGlobal > capitalBaseGlobal ? 'text-neon-green' : 'text-white'} mb-4`;
+            
+            // 2. ESTADÍSTICA DEL DÍA DE HOY
+            const hoyPct = capitalBaseGlobal > 0 ? (pnlHoy / capitalBaseGlobal) * 100 : 0;
+            const hoyUI = document.getElementById('stat-hoy-pnl');
+            const hoyPctUI = document.getElementById('stat-hoy-pct');
+            hoyUI.innerText = `${pnlHoy >= 0 ? '+' : ''}$${pnlHoy.toFixed(2)}`;
+            hoyUI.className = `text-2xl font-bold ${pnlHoy > 0 ? 'text-neon-green' : (pnlHoy < 0 ? 'text-neon-red' : 'text-slate-200')}`;
+            hoyPctUI.innerText = `${hoyPct >= 0 ? '+' : ''}${hoyPct.toFixed(2)}%`;
+            hoyPctUI.className = `text-xs font-bold ${hoyPct > 0 ? 'text-neon-green' : (hoyPct < 0 ? 'text-neon-red' : 'text-slate-400')}`;
+
             document.getElementById('stat-ops').innerText = operacionesCargadas.length;
             document.getElementById('stat-ops-detail').innerText = `${wins}W - ${losses}L - ${bes}BE`;
             document.getElementById('stat-winrate').innerText = (wins + losses + bes) > 0 ? `${Math.round((wins / (wins + losses + bes)) * 100)}%` : '0%';
@@ -541,8 +605,143 @@
             document.getElementById('lista-abiertas').innerHTML = abiertasHTML.length ? abiertasHTML.join('') : '<p class="text-slate-500 text-sm italic">No hay posiciones activas.</p>';
             document.getElementById('lista-cerradas').innerHTML = cerradasHTML.length ? cerradasHTML.join('') : '<p class="text-slate-500 text-sm italic">El historial está vacío.</p>';
 
-            actualizarGrafica(historialPnl, capitalBaseGlobal);
+            // 3 y 4. ACTUALIZAR GRÁFICA Y TOP ACTIVOS DEL MES
+            renderizarGraficaSegunFiltro();
+            renderizarTopActivosMensual();
             calcularRiesgo(); 
+        }
+
+        // --- FILTRO DE GRÁFICA (DIARIO, SEMANAL, MENSUAL, TODO) ---
+        function cambiarFiltroGrafica(modo) {
+            filtroGraficaActual = modo;
+            document.querySelectorAll('.btn-chart-filter').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'font-bold');
+                btn.classList.add('text-slate-400');
+            });
+            const btnActivo = document.getElementById(`btn-chart-${modo}`);
+            if(btnActivo) {
+                btnActivo.classList.add('bg-blue-600', 'text-white', 'font-bold');
+                btnActivo.classList.remove('text-slate-400');
+            }
+            renderizarGraficaSegunFiltro();
+        }
+
+        function renderizarGraficaSegunFiltro() {
+            // Filtrar ops cerradas
+            const cerradas = operacionesCargadas
+                .filter(o => o.estado === 'CERRADA' || o.estado === 'BREAKEVEN')
+                .sort((a,b) => new Date(a.fecha_operacion) - new Date(b.fecha_operacion));
+
+            if (cerradas.length === 0) {
+                actualizarGrafica(['Inicio'], [capitalBaseGlobal]);
+                return;
+            }
+
+            if (filtroGraficaActual === 'TODO') {
+                let acumulador = capitalBaseGlobal;
+                let labels = ['Inicio'];
+                let data = [capitalBaseGlobal];
+                cerradas.forEach((op, idx) => {
+                    acumulador += parseFloat(op.resultado_pnl || 0);
+                    labels.push(`Op ${idx + 1}`);
+                    data.push(acumulador);
+                });
+                actualizarGrafica(labels, data);
+            } 
+            else {
+                // Agrupamiento por Tiempo (DIARIO, SEMANAL, MENSUAL)
+                const grupos = {};
+                let acumulador = capitalBaseGlobal;
+
+                cerradas.forEach(op => {
+                    const d = new Date(op.fecha_operacion);
+                    let key = "";
+
+                    if (filtroGraficaActual === 'DIARIO') {
+                        key = d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+                    } else if (filtroGraficaActual === 'SEMANAL') {
+                        // Número de semana
+                        const startOfYear = new Date(d.getFullYear(), 0, 1);
+                        const pastDays = (d - startOfYear) / 86400000;
+                        const weekNum = Math.ceil((pastDays + startOfYear.getDay() + 1) / 7);
+                        key = `Sem ${weekNum}`;
+                    } else if (filtroGraficaActual === 'MENSUAL') {
+                        key = d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+                    }
+
+                    acumulador += parseFloat(op.resultado_pnl || 0);
+                    grupos[key] = acumulador; // Guarda el capital final al terminar la agrupación
+                });
+
+                const labels = Object.keys(grupos);
+                const data = Object.values(grupos);
+                labels.unshift('Inicio');
+                data.unshift(capitalBaseGlobal);
+
+                actualizarGrafica(labels, data);
+            }
+        }
+
+        // --- TOP DE ACTIVOS DEL MES ---
+        function renderizarTopActivosMensual() {
+            const ahora = new Date();
+            const mesActual = ahora.getMonth();
+            const anioActual = ahora.getFullYear();
+
+            // Filtrar solo cerradas del mes en curso
+            const opsMes = operacionesCargadas.filter(op => {
+                const d = new Date(op.fecha_operacion);
+                return (op.estado === 'CERRADA' || op.estado === 'BREAKEVEN') && d.getMonth() === mesActual && d.getFullYear() === anioActual;
+            });
+
+            const resumenActivos = {};
+
+            opsMes.forEach(op => {
+                const act = op.activo.toUpperCase();
+                const pnl = parseFloat(op.resultado_pnl || 0);
+                if (!resumenActivos[act]) {
+                    resumenActivos[act] = { pnl: 0, ops: 0 };
+                }
+                resumenActivos[act].pnl += pnl;
+                resumenActivos[act].ops += 1;
+            });
+
+            // Convertir a Array y ordenar del mejor al peor
+            const ranking = Object.keys(resumenActivos).map(act => ({
+                activo: act,
+                pnl: resumenActivos[act].pnl,
+                ops: resumenActivos[act].ops,
+                pct: capitalBaseGlobal > 0 ? (resumenActivos[act].pnl / capitalBaseGlobal) * 100 : 0
+            })).sort((a, b) => b.pnl - a.pnl);
+
+            const contUI = document.getElementById('lista-top-activos');
+            if (ranking.length === 0) {
+                contUI.innerHTML = `<p class="text-slate-500 text-xs italic text-center py-2">Sin posiciones cerradas este mes.</p>`;
+                return;
+            }
+
+            contUI.innerHTML = ranking.map((item, i) => {
+                const esPositivo = item.pnl >= 0;
+                const sign = esPositivo ? '+' : '';
+                const colorText = esPositivo ? 'text-neon-green' : 'text-neon-red';
+                const medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : `${i + 1}.`));
+
+                return `
+                    <div class="flex items-center justify-between bg-slate-900/60 p-2 rounded-lg border border-slate-700/50 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-400 text-[11px] w-5 text-center">${medal}</span>
+                            <div>
+                                <span class="font-bold text-white block">${item.activo}</span>
+                                <span class="text-[9px] text-slate-500">${item.ops} op(s)</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold block ${colorText}">${sign}$${item.pnl.toFixed(2)}</span>
+                            <span class="text-[10px] ${colorText}">${sign}${item.pct.toFixed(2)}%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // METODOS DEL MODAL (CIERRE, EDIT, CAPITAL, GRAFICA, ETC...) 
@@ -555,7 +754,37 @@
         function abrirModalEditar(id) { const op = operacionesCargadas.find(o => o.id === id); document.getElementById('modal-edit-id').value = id; document.getElementById('modal-edit-orig-lotaje').value = op.lotaje; document.getElementById('modal-edit-orig-riesgo').value = op.riesgo_usdt; const d = new Date(op.fecha_operacion); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); document.getElementById('modal-edit-fecha').value = d.toISOString().slice(0, 16); document.getElementById('modal-edit-activo').value = op.activo; document.getElementById('modal-edit-estado').value = op.estado; document.getElementById('modal-edit-lotaje').value = op.lotaje; document.getElementById('modal-edit-entrada').value = op.precio_entrada; document.getElementById('modal-edit-pnl').value = op.resultado_pnl; document.getElementById('modalEditar').classList.remove('hidden'); document.getElementById('modalEditar').classList.add('flex'); }
         async function guardarEdicion() { const id = document.getElementById('modal-edit-id').value; const opOrig = operacionesCargadas.find(o => o.id === id); const nuevoLotaje = parseFloat(document.getElementById('modal-edit-lotaje').value); const nuevoEntrada = parseFloat(document.getElementById('modal-edit-entrada').value); const nuevoEstado = document.getElementById('modal-edit-estado').value; const comisionGlobal = parseFloat(document.getElementById('comision').value) || 0; const nuevaFechaIso = new Date(document.getElementById('modal-edit-fecha').value).toISOString(); let nuevoRiesgoUsdt = parseFloat(opOrig.riesgo_usdt); if (nuevoEstado === 'ABIERTA') { const divisor = Math.abs(nuevoEntrada - opOrig.precio_sl) + (nuevoEntrada + opOrig.precio_sl) * ((comisionGlobal / 100)); nuevoRiesgoUsdt = nuevoLotaje * divisor; } const up = { fecha_operacion: nuevaFechaIso, activo: document.getElementById('modal-edit-activo').value.toUpperCase(), estado: nuevoEstado, lotaje: nuevoLotaje, riesgo_usdt: nuevoRiesgoUsdt, precio_entrada: nuevoEntrada, resultado_pnl: parseFloat(document.getElementById('modal-edit-pnl').value) }; await db.from('bitacora_trading').update(up).eq('id', id); cerrarModal('modalEditar'); cargarDatos(); }
         async function eliminar(id) { if(confirm("¿Seguro que deseas eliminar este registro para siempre? El saldo volverá a tu cuenta.")) { await db.from('bitacora_trading').delete().eq('id', id); cargarDatos(); } }
-        function actualizarGrafica(datosPnl, base) { let arrayCurva = [base]; let acumulador = base; datosPnl.forEach(pnl => { if(pnl !== 0) { acumulador += pnl; arrayCurva.push(acumulador); }}); const ctx = document.getElementById('chartCapital').getContext('2d'); if(chartInstance) chartInstance.destroy(); chartInstance = new Chart(ctx, { type: 'line', data: { labels: arrayCurva.map((_, i) => `Op ${i}`), datasets: [{ label: 'Capital', data: arrayCurva, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0f172a', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } }); }
+
+        function actualizarGrafica(labels, datosCapital) { 
+            const ctx = document.getElementById('chartCapital').getContext('2d'); 
+            if(chartInstance) chartInstance.destroy(); 
+            chartInstance = new Chart(ctx, { 
+                type: 'line', 
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        label: 'Capital', 
+                        data: datosCapital, 
+                        borderColor: '#3b82f6', 
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)', 
+                        borderWidth: 2, 
+                        pointRadius: 3, 
+                        pointBackgroundColor: '#0f172a', 
+                        fill: true, 
+                        tension: 0.3 
+                    }] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } }, 
+                    scales: { 
+                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }, 
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { size: 10 } } } 
+                    } 
+                } 
+            }); 
+        }
     </script>
     <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(err => console.log(err)); }); }</script>
 </body>
