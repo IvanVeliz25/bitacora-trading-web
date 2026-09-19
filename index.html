@@ -19,20 +19,18 @@
         .text-neon-red { color: #ef4444; }
         .bg-long { background-color: #064e3b; color: #34d399; }
         .bg-short { background-color: #7f1d1d; color: #f87171; }
-        /* INPUTS MÁS ALTOS Y CÓMODOS */
         input, select { 
-    background: #0f172a; 
-    border: 1px solid #334155; 
-    color: white; 
-    border-radius: 8px; 
-    width: 100%; 
-    outline: none; 
-    transition: 0.3s;
-    /* Aquí forzamos la altura y el padding contra Tailwind */
-    padding: 12px 16px !important; 
-    min-height: 50px !important; 
-    font-size: 15px !important;
-}
+            background: #0f172a; 
+            border: 1px solid #334155; 
+            color: white; 
+            border-radius: 8px; 
+            width: 100%; 
+            outline: none; 
+            transition: 0.3s;
+            padding: 12px 16px !important; 
+            min-height: 50px !important; 
+            font-size: 15px !important;
+        }
         input:focus, select:focus { border-color: #3b82f6; }
         label { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 5px; display: block; }
         .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
@@ -41,7 +39,6 @@
 <body class="p-4 md:p-8 max-w-7xl mx-auto">
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        
         <div class="glass-card p-4 bg-slate-800/50 border-blue-500/30 lg:col-span-1">
             <label class="text-blue-400 mb-1 flex justify-between">Capital Disponible</label>
             <div id="stat-capital-disp" class="text-4xl font-bold text-white mb-4">$0.00</div>
@@ -64,7 +61,6 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         <div class="lg:col-span-1 flex flex-col gap-6">
             
             <div class="glass-card p-5 border-slate-700">
@@ -72,32 +68,51 @@
                 
                 <div class="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 text-center">
                     <div id="display-riesgo" class="text-[13px] text-slate-300">
-                        Riesgo: <b>$0.00</b> | Lot: <b>0.0000</b> | Vol: <b>$0.00</b>
+                        Capital Base Escalonado: <b id="cap-base-riesgo" class="text-white">$0.00</b><br>
+                        Volumen Posición: <b id="volumen-calc" class="text-blue-400">$0.00</b>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div><label>Riesgo (%)</label><input type="number" id="riesgoP" value="2" step="0.1" oninput="calcularRiesgo()"></div>
-                    <div><label>Comisión (%)</label><input type="number" id="comision" value="0.05" step="0.01" oninput="calcularRiesgo()"></div>
+                <!-- ENTRADAS MUTUAS (%, USD, LOTAJE) -->
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div>
+                        <label class="text-[10px]">Riesgo (%)</label>
+                        <input type="number" id="riesgoP" value="1" step="0.1" oninput="calcularRiesgo('porcentaje')">
+                    </div>
+                    <div>
+                        <label class="text-[10px]">Riesgo ($)</label>
+                        <input type="number" id="riesgoUsd" step="any" oninput="calcularRiesgo('usd')">
+                    </div>
+                    <div>
+                        <label class="text-[10px]">Lotaje</label>
+                        <input type="number" id="lotajeInput" step="any" oninput="calcularRiesgo('lotaje')">
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <label>Activo</label>
-                        <select id="activo" onchange="toggleOtro(); asignarRiesgoAutomatico()">
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="col-span-1">
+                        <label class="text-[10px]">Activo</label>
+                        <select id="activo" onchange="toggleOtro(); asignarRiesgoAutomatico(); actualizarPrecioEntrada()">
                             <option value="BTC">BTC</option><option value="ETH">ETH</option><option value="SOL">SOL</option><option value="BNB">BNB</option><option value="OTRO">Otro...</option>
                         </select>
                     </div>
-                    <div>
-                        <label>Temporalidad</label>
+                    <div class="col-span-1">
+                        <label class="text-[10px]">Temporalidad</label>
                         <select id="temporalidad" onchange="asignarRiesgoAutomatico()">
                             <option value="1m">1m</option><option value="3m">3m</option><option value="5m" selected>5m</option><option value="15m">15m</option>
                             <option value="1H">1H</option><option value="4H">4H</option><option value="1D">1D</option>
                         </select>
                     </div>
+                    <div class="col-span-1">
+                        <label class="text-[10px]">Comisión (%)</label>
+                        <input type="number" id="comision" value="0.05" step="0.01" oninput="calcularRiesgo()">
+                    </div>
                 </div>
                 
-                <div id="div-otro" class="mb-4 hidden"><label>Nombre del Activo</label><input type="text" id="activoOtro" placeholder="Ej: RNDR"></div>
+                <div id="div-otro" class="mb-4 hidden">
+                    <label>Nombre del Activo</label>
+                    <input type="text" id="activoOtro" placeholder="Ej: RNDR" onblur="actualizarPrecioEntrada()">
+                </div>
                 
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div>
@@ -114,8 +129,17 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div><label>Precio Entrada</label><input type="number" id="entrada" value="1" step="any" oninput="calcularSlPorDistancia()"></div>
-                    <div><label>Stop Loss (SL)</label><input type="number" id="sl" step="any" placeholder="0.00" oninput="limpiarDistancia()"></div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="mb-0">Precio Entrada</label>
+                            <button type="button" id="btn-actualizar-precio" onclick="actualizarPrecioEntrada()" class="text-[10px] text-blue-400 font-bold hover:underline">⚡ Actualizar</button>
+                        </div>
+                        <input type="number" id="entrada" value="1" step="any" oninput="calcularSlPorDistancia()">
+                    </div>
+                    <div>
+                        <label>Stop Loss (SL)</label>
+                        <input type="number" id="sl" step="any" placeholder="0.00" oninput="limpiarDistancia()">
+                    </div>
                 </div>
 
                 <button onclick="guardarOperacion()" id="btnGuardar" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-lg transition shadow-lg text-base">Abrir Posición</button>
@@ -139,7 +163,6 @@
                     <div id="stat-pnl" class="text-3xl font-bold text-slate-300">$0.00</div>
                 </div>
             </div>
-
         </div>
 
         <div class="lg:col-span-2 space-y-6">
@@ -157,6 +180,7 @@
         </div>
     </div>
 
+    <!-- MODALES DE CAPITAL, CIERRE Y EDICION -->
     <div id="modalCapital" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4">
         <div class="glass-card p-6 w-full max-w-sm">
             <h3 id="modal-cap-titulo" class="text-lg font-bold mb-4 text-white">Registrar Capital</h3>
@@ -181,23 +205,17 @@
     <div id="modalEditar" class="fixed inset-0 modal-overlay hidden items-center justify-center z-50 p-4 overflow-y-auto">
         <div class="glass-card p-6 w-full max-w-sm my-8">
             <h3 class="text-lg font-bold mb-4 text-emerald-400">Editar Operación</h3>
-            <input type="hidden" id="modal-edit-id">
-            <input type="hidden" id="modal-edit-orig-lotaje">
-            <input type="hidden" id="modal-edit-orig-riesgo">
-            
-            <div class="mb-4"><label>Fecha y Hora de Apertura</label><input type="datetime-local" id="modal-edit-fecha"></div>
+            <input type="hidden" id="modal-edit-id"><input type="hidden" id="modal-edit-orig-lotaje"><input type="hidden" id="modal-edit-orig-riesgo">
+            <div class="mb-4"><label>Fecha y Hora</label><input type="datetime-local" id="modal-edit-fecha"></div>
             <div class="mb-4"><label>Activo</label><input type="text" id="modal-edit-activo"></div>
-            
             <div class="grid grid-cols-2 gap-3 mb-4">
                 <div><label>Estado</label><select id="modal-edit-estado"><option value="ABIERTA">Abierta</option><option value="BREAKEVEN">BreakEven</option><option value="CERRADA">Cerrada</option></select></div>
                 <div><label>Lotaje Actual</label><input type="number" id="modal-edit-lotaje" step="any"></div>
             </div>
-            
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <div><label>Precio Entrada</label><input type="number" id="modal-edit-entrada" step="any"></div>
                 <div><label>PnL Total</label><input type="number" id="modal-edit-pnl" step="any"></div>
             </div>
-            
             <div class="flex gap-3"><button onclick="cerrarModal('modalEditar')" class="w-1/2 bg-slate-700 py-3 rounded font-bold">Cancelar</button><button onclick="guardarEdicion()" class="w-1/2 bg-emerald-600 py-3 rounded font-bold">Guardar</button></div>
         </div>
     </div>
@@ -211,50 +229,122 @@
         let chartInstance = null;
         let capitalBaseGlobal = 0;
         let capitalDisponibleGlobal = 0;
-        let operacionActualCalculada = { tamano: 0, riesgoUsdt: 0 };
+        let operacionActualCalculada = { tamano: 0, riesgoUsdt: 0, riesgoP: 1 };
         let operacionesCargadas = [];
+        let lastRiskSource = 'porcentaje'; // Rastrea si estás editando %, USD o lotaje
 
         window.addEventListener('DOMContentLoaded', () => { 
-            // 1. PRIMERO cargamos la base de datos (Si el móvil bloquea algo, esto ya se ejecutó)
             asignarRiesgoAutomatico(); 
             cargarDatos(); 
-            
-            // 2. Arrancamos el auto-actualizador
             setInterval(cargarDatos, 60000);
 
-            // 3. Pedimos notificaciones de forma segura a prueba de "crasheos"
             try {
                 if ('Notification' in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-                    // El .catch evita que los navegadores móviles rompan la app si rechazan la petición
                     let promise = Notification.requestPermission();
-                    if (promise) {
-                        promise.catch(err => console.log("Permiso de notificación ignorado", err));
-                    }
+                    if (promise) promise.catch(err => console.log(err));
                 }
-            } catch (error) {
-                console.log("El navegador móvil no soporta notificaciones automáticas", error);
-            }
+            } catch (error) {}
         });
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 
-        // --- CAPITAL ---
-        function abrirModalCapital(tipo) {
-            document.getElementById('modal-cap-tipo').value = tipo;
-            document.getElementById('modal-cap-titulo').innerText = tipo === 'DEPOSITO' ? 'Inyectar Capital' : 'Retirar Capital';
-            document.getElementById('modal-cap-monto').value = '';
-            document.getElementById('modalCapital').classList.remove('hidden'); document.getElementById('modalCapital').classList.add('flex');
+        // --- BINANCE API (PRECIO REAL) ---
+        async function actualizarPrecioEntrada() {
+            let activo = document.getElementById('activo').value;
+            if(activo === 'OTRO') activo = document.getElementById('activoOtro').value.toUpperCase().trim();
+            if(!activo) return;
+            
+            const btn = document.getElementById('btn-actualizar-precio');
+            const par = activo.endsWith('USDT') ? activo : `${activo}USDT`;
+            
+            try {
+                btn.innerText = '⏳';
+                const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${par}`);
+                if(res.ok) {
+                    const data = await res.json();
+                    document.getElementById('entrada').value = parseFloat(data.price);
+                    calcularSlPorDistancia(); // Recalcula el SL y los riesgos
+                }
+            } catch (error) {
+                console.warn(`No se pudo obtener precio para ${par}`, error);
+            } finally {
+                btn.innerText = '⚡ Actualizar';
+            }
         }
 
-        async function ejecutarTransaccionCapital() {
-            const monto = parseFloat(document.getElementById('modal-cap-monto').value);
-            const tipo = document.getElementById('modal-cap-tipo').value;
-            if(!monto || isNaN(monto)) return alert("Ingresa un monto válido");
-            await db.from('historial_capital').insert([{ tipo: tipo, monto: monto }]);
-            cerrarModal('modalCapital'); cargarDatos();
+        // --- LÓGICA DE ESCALONAMIENTO DE CAPITAL ---
+        function getCapitalBaseParaRiesgo(capital) {
+            if (capital <= 0) return 0;
+            // Define el tamaño del "escalón" o bloque
+            let step = 10;
+            if (capital >= 1000) step = 100; // Ej: 1000 a 1099 -> Base 1000
+            else step = 10;                  // Ej: 107 a 115 -> Base 100 y 110
+            
+            return Math.floor(capital / step) * step;
         }
 
-        // --- FORMULARIO NUEVA OP ---
+        // --- CALCULOS DE RIESGO MUTUOS ---
+        function calcularRiesgo(source = lastRiskSource) {
+            lastRiskSource = source; // Recuerda el último campo que editaste
+            
+            const capBase = getCapitalBaseParaRiesgo(capitalDisponibleGlobal);
+            document.getElementById('cap-base-riesgo').innerText = `$${capBase.toFixed(2)}`;
+
+            const inputP = document.getElementById('riesgoP');
+            const inputUsd = document.getElementById('riesgoUsd');
+            const inputLot = document.getElementById('lotajeInput');
+            
+            const comisionP = parseFloat(document.getElementById('comision').value) || 0;
+            const ent = parseFloat(document.getElementById('entrada').value) || 0;
+            const sl = parseFloat(document.getElementById('sl').value) || 0;
+
+            let divisor = 0;
+            // Calcula cuánto riesgo ($) equivale a 1 Lote exacto
+            if (ent > 0 && sl > 0 && ent !== sl) {
+                divisor = Math.abs(ent - sl) + (ent + sl) * ((comisionP / 100));
+            }
+
+            let rP = parseFloat(inputP.value) || 0;
+            let rUsd = parseFloat(inputUsd.value) || 0;
+            let lot = parseFloat(inputLot.value) || 0;
+
+            if (source === 'porcentaje') {
+                rUsd = capBase * (rP / 100);
+                inputUsd.value = rUsd.toFixed(2);
+                if (divisor > 0) {
+                    lot = rUsd / divisor;
+                    inputLot.value = lot.toFixed(5);
+                } else inputLot.value = '';
+            } 
+            else if (source === 'usd') {
+                if (capBase > 0) rP = (rUsd / capBase) * 100;
+                inputP.value = rP.toFixed(2);
+                if (divisor > 0) {
+                    lot = rUsd / divisor;
+                    inputLot.value = lot.toFixed(5);
+                } else inputLot.value = '';
+            } 
+            else if (source === 'lotaje') {
+                if (divisor > 0) {
+                    rUsd = lot * divisor;
+                    inputUsd.value = rUsd.toFixed(2);
+                    if (capBase > 0) rP = (rUsd / capBase) * 100;
+                    inputP.value = rP.toFixed(2);
+                }
+            }
+
+            // Guardar global para creación
+            operacionActualCalculada = { 
+                tamano: parseFloat(inputLot.value) || 0, 
+                riesgoUsdt: parseFloat(inputUsd.value) || 0,
+                riesgoP: parseFloat(inputP.value) || 0
+            };
+
+            const volumen = operacionActualCalculada.tamano * ent;
+            document.getElementById('volumen-calc').innerText = `$${volumen.toFixed(2)}`;
+        }
+
+        // --- AUTO ASIGNACION Y DEMAS ---
         function toggleOtro() { document.getElementById('div-otro').style.display = document.getElementById('activo').value === 'OTRO' ? 'block' : 'none'; }
 
         function asignarRiesgoAutomatico() {
@@ -267,13 +357,12 @@
             const tfAlta = ['4H', '1D'].includes(tf);
 
             let riesgo = 0.25;
-
             if (tfAlta) riesgo = esCryptoMayor ? 5 : 3;
             else if (tfMedia) riesgo = esCryptoMayor ? 2 : 1;
             else if (tfBaja) riesgo = 0.25;
 
             document.getElementById('riesgoP').value = riesgo;
-            calcularRiesgo();
+            calcularRiesgo('porcentaje'); // Actualiza todo en cascada
         }
 
         function calcularSlPorDistancia() {
@@ -290,63 +379,19 @@
 
         function limpiarDistancia() { document.getElementById('sl-distancia').value = ''; calcularRiesgo(); }
 
-// Historial local para no repetir notificaciones de la misma operación
         let opsNotificadas = JSON.parse(localStorage.getItem('ops_notificadas') || '[]');
-
         function comprobarYNotificar(op, progreso) {
-            // Solo alertar si está ABIERTA, llegó al 100% y no ha sido notificada antes
             if (op.estado === 'ABIERTA' && parseFloat(progreso) >= 100 && !opsNotificadas.includes(op.id)) {
-                
                 if (window.Notification && Notification.permission === "granted") {
                     const titulo = `🚨 REVISAR TRADING: ${op.activo}`;
-                    const opciones = {
-                        body: `Tu posición en ${op.temporalidad} (${op.direccion}) alcanzó el 100%. ¡Toma acción!`,
-                        tag: op.id, // Evita duplicados
-                        icon: 'icon-192.png' // Usa tu nuevo icono para que se vea profesional en el celular
-                    };
-
-                    // La forma moderna y obligatoria para celulares (PWA)
+                    const opciones = { body: `Tu posición en ${op.temporalidad} (${op.direccion}) alcanzó el 100%.`, tag: op.id, icon: 'icon-192.png' };
                     if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.ready.then(registration => {
-                            registration.showNotification(titulo, opciones);
-                        }).catch(err => {
-                            // Si el Service Worker falla, intenta el método clásico de PC
-                            new Notification(titulo, opciones);
-                        });
-                    } else {
-                        // Para navegadores viejos o sin Service Worker
-                        new Notification(titulo, opciones);
-                    }
-
-                    // Guardar ID para no volver a notificar este trade
-                    opsNotificadas.push(op.id);
-                    localStorage.setItem('ops_notificadas', JSON.stringify(opsNotificadas));
+                        navigator.serviceWorker.ready.then(reg => reg.showNotification(titulo, opciones)).catch(() => new Notification(titulo, opciones));
+                    } else new Notification(titulo, opciones);
+                    
+                    opsNotificadas.push(op.id); localStorage.setItem('ops_notificadas', JSON.stringify(opsNotificadas));
                 }
             }
-        }
-
-
-        function calcularRiesgo() {
-            const rP = parseFloat(document.getElementById('riesgoP').value) || 0;
-            const comisionP = parseFloat(document.getElementById('comision').value) || 0;
-            const ent = parseFloat(document.getElementById('entrada').value) || 0;
-            const sl = parseFloat(document.getElementById('sl').value) || 0;
-
-            const riesgoUsdt = capitalDisponibleGlobal * (rP / 100);
-            let tamano = 0; let volumen = 0;
-
-            if (ent > 0 && sl > 0 && ent !== sl) {
-                const divisor = Math.abs(ent - sl) + (ent + sl) * ((comisionP / 100));
-                tamano = riesgoUsdt / divisor;
-                volumen = tamano * ent;
-            }
-
-            operacionActualCalculada = { tamano, riesgoUsdt };
-            document.getElementById('display-riesgo').innerHTML = `
-                Riesgo: <b class="text-white">$${riesgoUsdt.toFixed(2)}</b> | 
-                Lot: <b class="text-white">${tamano.toFixed(5)}</b> | 
-                Vol: <b class="text-white">$${volumen.toFixed(2)}</b>
-            `;
         }
 
         async function guardarOperacion() {
@@ -355,76 +400,48 @@
             
             const ent = parseFloat(document.getElementById('entrada').value);
             const sl = parseFloat(document.getElementById('sl').value);
-            if(!ent || !sl) return alert("Completa los precios.");
+            if(!ent || !sl || operacionActualCalculada.tamano <= 0) return alert("Revisa precios y asegúrate que el lotaje no sea 0.");
 
             const op = {
                 activo: activo, direccion: document.getElementById('direccion').value,
                 temporalidad: document.getElementById('temporalidad').value,
-                precio_entrada: ent, precio_sl: sl, riesgo_porcentaje: document.getElementById('riesgoP').value,
-                riesgo_usdt: operacionActualCalculada.riesgoUsdt, lotaje: operacionActualCalculada.tamano
-                // fecha_operacion toma default now() desde Supabase
+                precio_entrada: ent, precio_sl: sl, 
+                riesgo_porcentaje: operacionActualCalculada.riesgoP,
+                riesgo_usdt: operacionActualCalculada.riesgoUsdt, 
+                lotaje: operacionActualCalculada.tamano
             };
 
             const btn = document.getElementById('btnGuardar');
             btn.innerText = "Guardando..."; btn.disabled = true;
-
             await db.from('bitacora_trading').insert([op]);
             
-            document.getElementById('entrada').value = "1"; document.getElementById('sl').value = ""; document.getElementById('sl-distancia').value = "";
+            document.getElementById('sl').value = ""; document.getElementById('sl-distancia').value = "";
             await cargarDatos();
             btn.innerText = "Abrir Posición"; btn.disabled = false;
         }
 
-        // --- BARRA DE PROGRESO DE VELAS ---
         function calcularProgresoVelas(fechaIso, tf) {
             const timestamp = new Date(fechaIso).getTime();
             let durationMin = 5; let targetCandles = 30;
-
-            switch(tf) {
-                case '1m': durationMin = 1; break;
-                case '3m': durationMin = 3; break;
-                case '5m': durationMin = 5; break;
-                case '15m': durationMin = 15; break;
-                case '1H': durationMin = 60; break;
-                case '4H': durationMin = 240; targetCandles = 15; break;
-                case '1D': durationMin = 1440; targetCandles = 15; break;
-            }
-
+            switch(tf) { case '1m': durationMin = 1; break; case '3m': durationMin = 3; break; case '5m': durationMin = 5; break; case '15m': durationMin = 15; break; case '1H': durationMin = 60; break; case '4H': durationMin = 240; targetCandles = 15; break; case '1D': durationMin = 1440; targetCandles = 15; break; }
             const durationMs = durationMin * 60 * 1000;
             const candleStart = Math.floor(timestamp / durationMs) * durationMs;
             const endTime = candleStart + (targetCandles * durationMs);
             const now = Date.now();
-
             let progress = ((now - candleStart) / (endTime - candleStart)) * 100;
-            if (progress > 100) progress = 100;
-            if (progress < 0) progress = 0;
-
+            if (progress > 100) progress = 100; if (progress < 0) progress = 0;
             const velasTranscurridas = Math.floor((now - candleStart) / durationMs);
-
             let color = 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]';
-            if (progress >= 80) color = 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]';
-            else if (progress >= 50) color = 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]';
-
+            if (progress >= 80) color = 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'; else if (progress >= 50) color = 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]';
             return { progress: progress.toFixed(1), velas: Math.max(0, Math.min(velasTranscurridas, targetCandles)), target: targetCandles, color: color };
         }
 
-        // --- CARGAR Y RENDERIZAR ---
         async function cargarDatos() {
-            const [resOps, resCap] = await Promise.all([
-                db.from('bitacora_trading').select('*').order('fecha_operacion', { ascending: false }),
-                db.from('historial_capital').select('*')
-            ]);
-
-            operacionesCargadas = resOps.data || [];
-            const transaccionesCapital = resCap.data || [];
-
+            const [resOps, resCap] = await Promise.all([ db.from('bitacora_trading').select('*').order('fecha_operacion', { ascending: false }), db.from('historial_capital').select('*') ]);
+            operacionesCargadas = resOps.data || []; const transaccionesCapital = resCap.data || [];
             capitalBaseGlobal = 0;
-            transaccionesCapital.forEach(t => {
-                if(t.tipo === 'DEPOSITO') capitalBaseGlobal += parseFloat(t.monto);
-                if(t.tipo === 'RETIRO') capitalBaseGlobal -= parseFloat(t.monto);
-            });
+            transaccionesCapital.forEach(t => { if(t.tipo === 'DEPOSITO') capitalBaseGlobal += parseFloat(t.monto); if(t.tipo === 'RETIRO') capitalBaseGlobal -= parseFloat(t.monto); });
             document.getElementById('stat-capital-base').innerText = `$${capitalBaseGlobal.toFixed(2)}`;
-
             renderizarEstadisticas();
         }
 
@@ -441,9 +458,7 @@
                     const divisor = Math.abs(op.precio_entrada - op.precio_sl) + (op.precio_entrada + op.precio_sl) * ((comisionGlobal / 100) * 2);
                     riesgoOpCalculado = op.lotaje * divisor;
                     riesgoFlotante += riesgoOpCalculado;
-                } else if(op.estado === 'CERRADA' || op.estado === 'BREAKEVEN') {
-                    pnlTotal += pnlOp;
-                }
+                } else if(op.estado === 'CERRADA' || op.estado === 'BREAKEVEN') pnlTotal += pnlOp;
 
                 if(op.estado === 'CERRADA' || (op.estado === 'BREAKEVEN' && pnlOp != 0)) {
                     if(pnlOp > 0) wins++; else if(pnlOp < 0) losses++; else bes++;
@@ -465,29 +480,16 @@
                     htmlParciales += `</div>`;
                 }
 
-            let barraHTML = '';
+                let barraHTML = '';
                 if(op.estado === 'ABIERTA' || op.estado === 'BREAKEVEN') {
                     const prog = calcularProgresoVelas(op.fecha_operacion, op.temporalidad);
-                    
-                    // ◄ AÑADE ESTA LÍNEA AQUÍ PARA DISPARAR LA ALERTA
                     comprobarYNotificar(op, prog.progress);
-
-                    barraHTML = `
-                        <div class="mt-3 bg-slate-900/50 p-2 rounded border border-slate-700/50">
-                            <div class="flex justify-between text-[9px] text-slate-400 mb-1 font-bold uppercase tracking-wider">
-                                <span>Velas: ${prog.velas}/${prog.target}</span>
-                                <span>${prog.progress}%</span>
-                            </div>
-                            <div class="w-full bg-slate-800 rounded-full h-1.5 border border-slate-700 overflow-hidden">
-                                <div class="${prog.color} h-full rounded-full transition-all duration-1000 ease-out" style="width: ${prog.progress}%"></div>
-                            </div>
-                        </div>
-                    `;
+                    barraHTML = `<div class="mt-3 bg-slate-900/50 p-2 rounded border border-slate-700/50"><div class="flex justify-between text-[9px] text-slate-400 mb-1 font-bold uppercase tracking-wider"><span>Velas: ${prog.velas}/${prog.target}</span><span>${prog.progress}%</span></div><div class="w-full bg-slate-800 rounded-full h-1.5 border border-slate-700 overflow-hidden"><div class="${prog.color} h-full rounded-full transition-all duration-1000 ease-out" style="width: ${prog.progress}%"></div></div></div>`;
                 }
 
                 const cardButtons = op.estado === 'ABIERTA' || op.estado === 'BREAKEVEN' ? `
                     <div class="flex gap-2 pl-2 mt-3">
-                        ${op.estado === 'ABIERTA' ? `<button onclick="accionEscudo('${op.id}')" title="Proteger a BK" class="flex-1 bg-slate-800 hover:bg-yellow-600/80 border border-slate-600 text-slate-300 py-2 rounded text-xs font-bold transition">🛡️ BK</button>` : `<div class="flex-1 text-center bg-yellow-900/30 text-yellow-500 py-2 rounded text-[10px] font-bold border border-yellow-700/50 flex items-center justify-center">🛡️ PROTEGIDO</div>`}
+                        ${op.estado === 'ABIERTA' ? `<button onclick="accionEscudo('${op.id}')" class="flex-1 bg-slate-800 hover:bg-yellow-600/80 border border-slate-600 text-slate-300 py-2 rounded text-xs font-bold transition">🛡️ BK</button>` : `<div class="flex-1 text-center bg-yellow-900/30 text-yellow-500 py-2 rounded text-[10px] font-bold border border-yellow-700/50 flex items-center justify-center">🛡️ PROTEGIDO</div>`}
                         <button onclick="abrirModalCierre('${op.id}')" class="flex-1 bg-blue-600/20 text-blue-400 border border-blue-600/50 hover:bg-blue-600/40 py-2 rounded text-xs font-bold transition">Cerrar</button>
                         <button onclick="abrirModalEditar('${op.id}')" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded text-xs transition">✏️ Editar</button>
                         <button onclick="eliminar('${op.id}')" class="px-3 bg-rose-900/30 hover:bg-rose-900 text-rose-400 border border-rose-900 rounded transition">🗑</button>
@@ -509,9 +511,7 @@
                             <div><span class="text-slate-400 text-[9px] uppercase block">Stop Loss</span><span class="font-bold text-rose-400">${op.precio_sl}</span></div>
                             <div>
                                 <span class="text-slate-400 text-[9px] uppercase block">Riesgo</span>
-                                <span class="${op.estado === 'ABIERTA' ? 'text-neon-red font-bold' : 'text-slate-500 line-through'}">
-                                    -$${riesgoOpCalculado.toFixed(2)} <span class="text-[9px] text-slate-400 font-normal ml-0.5">(${parseFloat(op.riesgo_porcentaje || 0).toFixed(1)}%)</span>
-                                </span>
+                                <span class="${op.estado === 'ABIERTA' ? 'text-neon-red font-bold' : 'text-slate-500 line-through'}">-$${riesgoOpCalculado.toFixed(2)} <span class="text-[9px] text-slate-400 font-normal ml-0.5">(${parseFloat(op.riesgo_porcentaje || 0).toFixed(1)}%)</span></span>
                             </div>
                             <div><span class="text-slate-400 text-[9px] uppercase block">Lotaje</span><span class="font-bold text-slate-200">${parseFloat(op.lotaje).toFixed(5)}</span></div>
                         </div>
@@ -527,13 +527,12 @@
 
             const capitalActual = capitalBaseGlobal + pnlTotal;
             capitalDisponibleGlobal = capitalActual - riesgoFlotante;
-            const totalCerradas = wins + losses + bes;
-
+            
             document.getElementById('stat-capital-disp').innerText = `$${capitalDisponibleGlobal.toFixed(2)}`;
             document.getElementById('stat-capital-disp').className = `text-4xl font-bold ${capitalDisponibleGlobal > capitalBaseGlobal ? 'text-neon-green' : 'text-white'} mb-4`;
             document.getElementById('stat-ops').innerText = operacionesCargadas.length;
             document.getElementById('stat-ops-detail').innerText = `${wins}W - ${losses}L - ${bes}BE`;
-            document.getElementById('stat-winrate').innerText = totalCerradas > 0 ? `${Math.round((wins / totalCerradas) * 100)}%` : '0%';
+            document.getElementById('stat-winrate').innerText = (wins + losses + bes) > 0 ? `${Math.round((wins / (wins + losses + bes)) * 100)}%` : '0%';
             
             const pnlUI = document.getElementById('stat-pnl');
             pnlUI.innerText = `${pnlTotal >= 0 ? '+' : ''}$${pnlTotal.toFixed(2)}`;
@@ -546,130 +545,18 @@
             calcularRiesgo(); 
         }
 
-        // --- ACCIONES ESPECÍFICAS ---
-        async function accionEscudo(id) {
-            await db.from('bitacora_trading').update({ estado: 'BREAKEVEN' }).eq('id', id);
-            cargarDatos();
-        }
-
-        // --- CIERRE ---
-        function abrirModalCierre(id) {
-            const op = operacionesCargadas.find(o => o.id === id);
-            document.getElementById('modal-cierre-id').value = id; document.getElementById('modal-cierre-max-lot').value = op.lotaje;
-            document.getElementById('modal-cierre-info').innerHTML = `Lotaje Abierto Disponible: <b class="text-white">${op.lotaje}</b>`;
-            document.getElementById('modal-cierre-lotaje').value = op.lotaje; document.getElementById('modal-cierre-pnl').value = '';
-            document.getElementById('modal-cierre-tipo').value = 'TOTAL'; toggleInputsCierre();
-            document.getElementById('modalCierre').classList.remove('hidden'); document.getElementById('modalCierre').classList.add('flex');
-        }
-
-        function toggleInputsCierre() {
-            const tipo = document.getElementById('modal-cierre-tipo').value;
-            const max = document.getElementById('modal-cierre-max-lot').value;
-            const inputLot = document.getElementById('div-lote-parcial');
-            if(tipo === 'PARCIAL') { inputLot.classList.remove('hidden'); document.getElementById('modal-cierre-lotaje').value = ''; } 
-            else { inputLot.classList.add('hidden'); document.getElementById('modal-cierre-lotaje').value = max; }
-        }
-
-        async function ejecutarCierre() {
-            const id = document.getElementById('modal-cierre-id').value;
-            const pnlNuevo = parseFloat(document.getElementById('modal-cierre-pnl').value);
-            const lotajeCerrar = parseFloat(document.getElementById('modal-cierre-lotaje').value);
-            const op = operacionesCargadas.find(o => o.id === id);
-            
-            if(isNaN(pnlNuevo) || isNaN(lotajeCerrar) || lotajeCerrar <= 0) return alert("Llena los campos correctamente.");
-            if(lotajeCerrar > op.lotaje) return alert("No puedes cerrar un lotaje mayor al que tienes abierto.");
-
-            const parcial = { fecha: new Date().toISOString(), lotaje: lotajeCerrar, pnl: pnlNuevo };
-            const arrayParciales = op.historial_parciales || []; arrayParciales.push(parcial);
-
-            const pnlAcumulado = (parseFloat(op.resultado_pnl) || 0) + pnlNuevo;
-            const lotajeRestante = op.lotaje - lotajeCerrar;
-            let nuevoEstado = op.estado;
-            if(lotajeRestante <= 0.000001) nuevoEstado = 'CERRADA'; else nuevoEstado = 'BREAKEVEN';
-
-            await db.from('bitacora_trading').update({ estado: nuevoEstado, resultado_pnl: pnlAcumulado, lotaje: Math.max(0, lotajeRestante), historial_parciales: arrayParciales }).eq('id', id);
-            cerrarModal('modalCierre'); cargarDatos();
-        }
-
-        // --- EDICIÓN (INCLUYENDO FECHA) ---
-        function abrirModalEditar(id) {
-            const op = operacionesCargadas.find(o => o.id === id);
-            document.getElementById('modal-edit-id').value = id; 
-            document.getElementById('modal-edit-orig-lotaje').value = op.lotaje;
-            document.getElementById('modal-edit-orig-riesgo').value = op.riesgo_usdt;
-            
-            // Ajustar fecha para el input datetime-local (zona horaria local)
-            const d = new Date(op.fecha_operacion);
-            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-            document.getElementById('modal-edit-fecha').value = d.toISOString().slice(0, 16);
-
-            document.getElementById('modal-edit-activo').value = op.activo;
-            document.getElementById('modal-edit-estado').value = op.estado; 
-            document.getElementById('modal-edit-lotaje').value = op.lotaje;
-            document.getElementById('modal-edit-entrada').value = op.precio_entrada; 
-            document.getElementById('modal-edit-pnl').value = op.resultado_pnl;
-            
-            document.getElementById('modalEditar').classList.remove('hidden'); 
-            document.getElementById('modalEditar').classList.add('flex');
-        }
-
-        async function guardarEdicion() {
-            const id = document.getElementById('modal-edit-id').value;
-            const opOrig = operacionesCargadas.find(o => o.id === id);
-            
-            const nuevoLotaje = parseFloat(document.getElementById('modal-edit-lotaje').value);
-            const nuevoEntrada = parseFloat(document.getElementById('modal-edit-entrada').value);
-            const nuevoEstado = document.getElementById('modal-edit-estado').value;
-            const comisionGlobal = parseFloat(document.getElementById('comision').value) || 0;
-            
-            // Convertir la fecha local del input nuevamente a formato UTC ISO
-            const nuevaFechaIso = new Date(document.getElementById('modal-edit-fecha').value).toISOString();
-
-            let nuevoRiesgoUsdt = parseFloat(opOrig.riesgo_usdt);
-            if (nuevoEstado === 'ABIERTA') {
-                const divisor = Math.abs(nuevoEntrada - opOrig.precio_sl) + (nuevoEntrada + opOrig.precio_sl) * ((comisionGlobal / 100));
-                nuevoRiesgoUsdt = nuevoLotaje * divisor;
-            }
-
-            const up = { 
-                fecha_operacion: nuevaFechaIso,
-                activo: document.getElementById('modal-edit-activo').value.toUpperCase(), 
-                estado: nuevoEstado, 
-                lotaje: nuevoLotaje, 
-                riesgo_usdt: nuevoRiesgoUsdt,
-                precio_entrada: nuevoEntrada, 
-                resultado_pnl: parseFloat(document.getElementById('modal-edit-pnl').value) 
-            };
-            
-            await db.from('bitacora_trading').update(up).eq('id', id);
-            cerrarModal('modalEditar'); 
-            cargarDatos();
-        }
-
-        async function eliminar(id) {
-            if(confirm("¿Seguro que deseas eliminar este registro para siempre? El saldo volverá a tu cuenta.")) {
-                await db.from('bitacora_trading').delete().eq('id', id); cargarDatos();
-            }
-        }
-
-        function actualizarGrafica(datosPnl, base) {
-            let arrayCurva = [base]; let acumulador = base;
-            datosPnl.forEach(pnl => { if(pnl !== 0) { acumulador += pnl; arrayCurva.push(acumulador); }});
-            const ctx = document.getElementById('chartCapital').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, { type: 'line', data: { labels: arrayCurva.map((_, i) => `Op ${i}`), datasets: [{ label: 'Capital', data: arrayCurva, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0f172a', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } });
-        }
+        // METODOS DEL MODAL (CIERRE, EDIT, CAPITAL, GRAFICA, ETC...) 
+        async function accionEscudo(id) { await db.from('bitacora_trading').update({ estado: 'BREAKEVEN' }).eq('id', id); cargarDatos(); }
+        function abrirModalCapital(tipo) { document.getElementById('modal-cap-tipo').value = tipo; document.getElementById('modal-cap-titulo').innerText = tipo === 'DEPOSITO' ? 'Inyectar Capital' : 'Retirar Capital'; document.getElementById('modal-cap-monto').value = ''; document.getElementById('modalCapital').classList.remove('hidden'); document.getElementById('modalCapital').classList.add('flex'); }
+        async function ejecutarTransaccionCapital() { const monto = parseFloat(document.getElementById('modal-cap-monto').value); const tipo = document.getElementById('modal-cap-tipo').value; if(!monto || isNaN(monto)) return alert("Ingresa un monto válido"); await db.from('historial_capital').insert([{ tipo: tipo, monto: monto }]); cerrarModal('modalCapital'); cargarDatos(); }
+        function abrirModalCierre(id) { const op = operacionesCargadas.find(o => o.id === id); document.getElementById('modal-cierre-id').value = id; document.getElementById('modal-cierre-max-lot').value = op.lotaje; document.getElementById('modal-cierre-info').innerHTML = `Lotaje Abierto Disponible: <b class="text-white">${op.lotaje}</b>`; document.getElementById('modal-cierre-lotaje').value = op.lotaje; document.getElementById('modal-cierre-pnl').value = ''; document.getElementById('modal-cierre-tipo').value = 'TOTAL'; toggleInputsCierre(); document.getElementById('modalCierre').classList.remove('hidden'); document.getElementById('modalCierre').classList.add('flex'); }
+        function toggleInputsCierre() { const tipo = document.getElementById('modal-cierre-tipo').value; const max = document.getElementById('modal-cierre-max-lot').value; const inputLot = document.getElementById('div-lote-parcial'); if(tipo === 'PARCIAL') { inputLot.classList.remove('hidden'); document.getElementById('modal-cierre-lotaje').value = ''; } else { inputLot.classList.add('hidden'); document.getElementById('modal-cierre-lotaje').value = max; } }
+        async function ejecutarCierre() { const id = document.getElementById('modal-cierre-id').value; const pnlNuevo = parseFloat(document.getElementById('modal-cierre-pnl').value); const lotajeCerrar = parseFloat(document.getElementById('modal-cierre-lotaje').value); const op = operacionesCargadas.find(o => o.id === id); if(isNaN(pnlNuevo) || isNaN(lotajeCerrar) || lotajeCerrar <= 0) return alert("Llena los campos correctamente."); if(lotajeCerrar > op.lotaje) return alert("No puedes cerrar un lotaje mayor al que tienes abierto."); const parcial = { fecha: new Date().toISOString(), lotaje: lotajeCerrar, pnl: pnlNuevo }; const arrayParciales = op.historial_parciales || []; arrayParciales.push(parcial); const pnlAcumulado = (parseFloat(op.resultado_pnl) || 0) + pnlNuevo; const lotajeRestante = op.lotaje - lotajeCerrar; let nuevoEstado = op.estado; if(lotajeRestante <= 0.000001) nuevoEstado = 'CERRADA'; else nuevoEstado = 'BREAKEVEN'; await db.from('bitacora_trading').update({ estado: nuevoEstado, resultado_pnl: pnlAcumulado, lotaje: Math.max(0, lotajeRestante), historial_parciales: arrayParciales }).eq('id', id); cerrarModal('modalCierre'); cargarDatos(); }
+        function abrirModalEditar(id) { const op = operacionesCargadas.find(o => o.id === id); document.getElementById('modal-edit-id').value = id; document.getElementById('modal-edit-orig-lotaje').value = op.lotaje; document.getElementById('modal-edit-orig-riesgo').value = op.riesgo_usdt; const d = new Date(op.fecha_operacion); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); document.getElementById('modal-edit-fecha').value = d.toISOString().slice(0, 16); document.getElementById('modal-edit-activo').value = op.activo; document.getElementById('modal-edit-estado').value = op.estado; document.getElementById('modal-edit-lotaje').value = op.lotaje; document.getElementById('modal-edit-entrada').value = op.precio_entrada; document.getElementById('modal-edit-pnl').value = op.resultado_pnl; document.getElementById('modalEditar').classList.remove('hidden'); document.getElementById('modalEditar').classList.add('flex'); }
+        async function guardarEdicion() { const id = document.getElementById('modal-edit-id').value; const opOrig = operacionesCargadas.find(o => o.id === id); const nuevoLotaje = parseFloat(document.getElementById('modal-edit-lotaje').value); const nuevoEntrada = parseFloat(document.getElementById('modal-edit-entrada').value); const nuevoEstado = document.getElementById('modal-edit-estado').value; const comisionGlobal = parseFloat(document.getElementById('comision').value) || 0; const nuevaFechaIso = new Date(document.getElementById('modal-edit-fecha').value).toISOString(); let nuevoRiesgoUsdt = parseFloat(opOrig.riesgo_usdt); if (nuevoEstado === 'ABIERTA') { const divisor = Math.abs(nuevoEntrada - opOrig.precio_sl) + (nuevoEntrada + opOrig.precio_sl) * ((comisionGlobal / 100)); nuevoRiesgoUsdt = nuevoLotaje * divisor; } const up = { fecha_operacion: nuevaFechaIso, activo: document.getElementById('modal-edit-activo').value.toUpperCase(), estado: nuevoEstado, lotaje: nuevoLotaje, riesgo_usdt: nuevoRiesgoUsdt, precio_entrada: nuevoEntrada, resultado_pnl: parseFloat(document.getElementById('modal-edit-pnl').value) }; await db.from('bitacora_trading').update(up).eq('id', id); cerrarModal('modalEditar'); cargarDatos(); }
+        async function eliminar(id) { if(confirm("¿Seguro que deseas eliminar este registro para siempre? El saldo volverá a tu cuenta.")) { await db.from('bitacora_trading').delete().eq('id', id); cargarDatos(); } }
+        function actualizarGrafica(datosPnl, base) { let arrayCurva = [base]; let acumulador = base; datosPnl.forEach(pnl => { if(pnl !== 0) { acumulador += pnl; arrayCurva.push(acumulador); }}); const ctx = document.getElementById('chartCapital').getContext('2d'); if(chartInstance) chartInstance.destroy(); chartInstance = new Chart(ctx, { type: 'line', data: { labels: arrayCurva.map((_, i) => `Op ${i}`), datasets: [{ label: 'Capital', data: arrayCurva, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#0f172a', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b' } } } } }); }
     </script>
-
-<script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('SW registrado', reg))
-                    .catch(err => console.log('Error en SW', err));
-            });
-        }
-    </script>
-
+    <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(err => console.log(err)); }); }</script>
 </body>
 </html>
